@@ -277,6 +277,23 @@ async function cargar(){
 }
 sb.channel("vendedores-cambios").on("postgres_changes",{event:"*",schema:"public",table:"vendedores"}, cargar).subscribe();
 cargar();
+
+// ENTER_SIGUIENTE: con Enter pasa al campo que sigue
+function camposEnOrden(){
+  return [$("nombre"),$("apellido"),$("telefono"),$("direccion"),$("localidad"),...document.querySelectorAll("[data-m]")];
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const lista = camposEnOrden(), i = lista.indexOf(e.target);
+  if (i < 0) return;
+  e.preventDefault();
+  if (i < lista.length - 1){
+    const sig = lista[i+1]; sig.focus();
+    if (sig.tagName === "INPUT" && sig.select) sig.select();
+  } else {
+    document.querySelector('button[onclick="guardar()"]').focus();
+  }
+});
 </script>
 </body>
 </html>
