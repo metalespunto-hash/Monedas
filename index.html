@@ -42,7 +42,7 @@
   <input id="direccion" placeholder="Dirección (calle y número)">
  </div>
  <select id="localidad">
-  <option>Andino</option><option>Aldao</option><option>Puerto General San Martín</option><option>Timbúes</option><option>San Lorenzo</option><option>Beltrán</option><option>Bermúdez</option><option>Baigorria</option><option>Cañada de Gómez</option><option>Totora</option><option>Luis Palacios</option><option>Maciel</option><option>La Ribera</option>
+  <option>Andino</option><option>Aldao</option><option>Puerto General San Martín</option><option>Timbúes</option><option>San Lorenzo</option><option>Beltrán</option><option>Bermúdez</option><option>Baigorria</option><option>Cañada de Gómez</option><option>Totora</option><option>Luis Palacios</option><option>Maciel</option><option>La Ribera</option><option>Rosario</option>
  </select>
  <div class="coins" id="coins"></div>
  <button class="sec" id="btnVoz" onclick="dictar()">Dictar monedas con la voz</button>
@@ -87,7 +87,7 @@ const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;"
 const pesos = n => "$" + n.toLocaleString("es-AR");
 
 // ---------- Campos de monedas y total ----------
-for (const k in PRECIOS) $("coins").innerHTML += `<div><label>${k} (x $${PRECIOS[k]})</label><input type="number" inputmode="numeric" min="0" value="0" data-m="${k}" oninput="calc()"></div>`;
+for (const k in PRECIOS) $("coins").innerHTML += `<div><label>${k} (x $${PRECIOS[k]})</label><input type="number" inputmode="numeric" min="0" placeholder="0" data-m="${k}" oninput="calc()" onfocus="this.select()"></div>`;
 function calc(){
   let t=0; document.querySelectorAll("[data-m]").forEach(i => t += (+i.value||0)*PRECIOS[i.dataset.m]);
   $("totalForm").textContent = "Total a pagar: " + pesos(t);
@@ -166,7 +166,7 @@ window.guardar = async () => {
     dia:$("dia").value, hora:$("hora").value, monedas, coord, orden:999, retirado:false });
   if (error) return alert("No se pudo guardar: " + error.message);
   ["nombre","apellido","telefono","direccion","dia","hora"].forEach(id => $(id).value="");
-  document.querySelectorAll("[data-m]").forEach(i => i.value=0); calc(); $("vozTexto").textContent="";
+  document.querySelectorAll("[data-m]").forEach(i => i.value=""); calc(); $("vozTexto").textContent="";
   if (!coord) alert("No pude ubicar esa dirección en el mapa. Revisala.");
   cargar();
 };
