@@ -10,7 +10,8 @@
 <style>
  *{box-sizing:border-box}
  body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#eef0f2;color:#14181c}
- header{background:#1f2937;color:#fff;padding:14px 18px;font-size:20px;font-weight:600}
+ header{background:#1f2937;color:#fff;padding:12px 18px;font-size:20px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px}
+ header button{width:auto;margin:0;padding:9px 16px;font-size:16px;background:#374151}
  main{max-width:900px;margin:auto;padding:12px}
  .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0002}
  h3{margin:0 0 8px}
@@ -30,7 +31,7 @@
 </style>
 </head>
 <body>
-<header>Compra de monedas</header>
+<header><span>Compra de monedas</span><button onclick="actualizar()">Actualizar</button></header>
 <main>
 
 <div class="card">
@@ -70,6 +71,43 @@
 
 <div id="lista"></div>
 </main>
+<script>
+// ACTUALIZAR: botón y chequeo automático de versión nueva
+var VERSION="2026-11-13-b";
+window.actualizar = function(){
+  try{ if ("caches" in window) caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); }); }catch(e){}
+  location.href = location.pathname + "?v=" + Date.now();
+};
+(function(){
+  try{
+    fetch(location.pathname, {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(t){
+      var m = t.match(/var VERSION="(\d{4}-\d{2}-\d{2}-[a-z0-9]+)"/);
+      if (m && m[1] !== VERSION && !sessionStorage.getItem("actualizado")){
+        sessionStorage.setItem("actualizado","1");
+        location.replace(location.pathname + "?v=" + Date.now());
+      }
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+<script>
+// ENTER_SIGUIENTE: con Enter (Intro) pasa al campo que sigue. Va aparte para que no dependa del resto.
+document.addEventListener("keydown", function(e){
+  if (e.key !== "Enter" && e.keyCode !== 13) return;
+  var ids = ["nombre","apellido","telefono","direccion","localidad"];
+  var lista = ids.map(function(i){ return document.getElementById(i); })
+    .concat(Array.prototype.slice.call(document.querySelectorAll("[data-m]")));
+  var i = lista.indexOf(e.target);
+  if (i < 0) return;
+  e.preventDefault();
+  if (i < lista.length - 1){
+    var sig = lista[i+1]; sig.focus();
+    if (sig.tagName === "INPUT" && sig.select) sig.select();
+  } else {
+    document.querySelector('button[onclick="guardar()"]').focus();
+  }
+}, true);
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -278,22 +316,6 @@ async function cargar(){
 sb.channel("vendedores-cambios").on("postgres_changes",{event:"*",schema:"public",table:"vendedores"}, cargar).subscribe();
 cargar();
 
-// ENTER_SIGUIENTE: con Enter pasa al campo que sigue
-function camposEnOrden(){
-  return [$("nombre"),$("apellido"),$("telefono"),$("direccion"),$("localidad"),...document.querySelectorAll("[data-m]")];
-}
-document.addEventListener("keydown", e => {
-  if (e.key !== "Enter") return;
-  const lista = camposEnOrden(), i = lista.indexOf(e.target);
-  if (i < 0) return;
-  e.preventDefault();
-  if (i < lista.length - 1){
-    const sig = lista[i+1]; sig.focus();
-    if (sig.tagName === "INPUT" && sig.select) sig.select();
-  } else {
-    document.querySelector('button[onclick="guardar()"]').focus();
-  }
-});
 </script>
 </body>
 </html>
