@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Monedas">
+<title>Compra de monedas</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+ *{box-sizing:border-box}
+ body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#eef0f2;color:#14181c}
+ header{background:#1f2937;color:#fff;padding:14px 18px;font-size:20px;font-weight:600}
+ main{max-width:900px;margin:auto;padding:12px}
+ .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0002}
+ h3{margin:0 0 8px}
+ input,select,button{font-size:17px;padding:11px;margin:3px 0;border:1px solid #bbb;border-radius:8px;width:100%}
+ button{background:#2563eb;color:#fff;border:none;font-weight:600}
+ button.sec{background:#6b7280} button.del{background:#dc2626} button.ok{background:#047857;font-size:20px;padding:15px}
+ .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .coins{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin:8px 0}
+ .coins label{font-size:13px;color:#444;display:block}
+ .stop{border-left:6px solid #2563eb}
+ .total{font-size:21px;font-weight:700;color:#047857;margin:6px 0}
+ .num{background:#2563eb;color:#fff;border-radius:50%;padding:2px 10px;margin-right:6px}
+ .next{border:3px solid #047857;background:#ecfdf5}
+ .modo{display:flex;align-items:center;gap:10px}.modo input{width:auto;margin:0}
+ #mapa{height:300px;border-radius:10px;margin-top:8px}
+ small{color:#555} a{color:#2563eb}
+</style>
+</head>
+<body>
+<header>Compra de monedas</header>
+<main>
+
+<div class="card">
+ <h3>Nuevo vendedor</h3>
+ <div class="grid">
+  <input id="nombre" placeholder="Nombre">
+  <input id="apellido" placeholder="Apellido">
+  <input id="telefono" placeholder="Teléfono" type="tel">
+  <input id="direccion" placeholder="Dirección (calle y número)">
+ </div>
+ <select id="localidad">
+  <option>Andino</option><option>Aldao</option><option>Puerto General San Martín</option><option>Timbúes</option><option>San Lorenzo</option><option>Beltrán</option><option>Bermúdez</option><option>Baigorria</option><option>Cañada de Gómez</option><option>Totora</option><option>Luis Palacios</option><option>Maciel</option><option>La Ribera</option>
+ </select>
+ <div class="coins" id="coins"></div>
+ <button class="sec" id="btnVoz" onclick="dictar()">Dictar monedas con la voz</button>
+ <small id="vozTexto"></small>
+ <div class="grid">
+  <input id="dia" type="date"><input id="hora" type="time">
+ </div>
+ <p class="total" id="totalForm">Total a pagar: $0</p>
+ <button onclick="guardar()">Guardar vendedor</button>
+</div>
+
+<div class="card">
+ <button onclick="armarRuta()">Armar ruta por cercanía desde mi casa</button>
+ <button class="sec" onclick="limpiarRetirados()">Borrar todos los retirados</button>
+ <small id="estado"></small>
+</div>
+
+<div class="card next" id="proxima" style="display:none"></div>
+
+<div class="card">
+ <label class="modo"><input type="checkbox" id="modoAuto" onchange="cambiarModo()"><b>Modo automático</b></label>
+ <small id="modoEstado"></small>
+ <div id="mapa"></div>
+</div>
+
+<div id="lista"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SUPABASE_URL = "https://zwzptyzkugdtldfkzmmf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_JWE3oSv4MyFp2zmPRBV1Hg_w4-FWvJZ";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const PRECIOS = {"10 pesos":46,"2 pesos":37,"1 peso":33,"50 centavos":30,"25 centavos":28,"25 plateada":6,"Llaves":80};
+const RADIO = 50; // metros para marcar llegada
+let vendedores = [], mapa=null, mYo=null, mDest=null, linea=null, miPos=null, rutaKey="", procesando=new Set();
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pesos = n => "$" + n.toLocaleString("es-AR");
+
+// ---------- Campos de monedas y total ----------
+for (const k in PRECIOS) $("coins").innerHTML += `<div><label>${k} (x $${PRECIOS[k]})</label><input type="number" inputmode="numeric" min="0" value="0" data-m="${k}" oninput="calc()"></div>`;
+function calc(){
+  let t=0; document.querySelectorAll("[data-m]").forEach(i => t += (+i.value||0)*PRECIOS[i.dataset.m]);
+  $("totalForm").textContent = "Total a pagar: " + pesos(t);
+}
+function totalDe(v){ let t=0; for (const k in PRECIOS) t += (v.monedas?.[k]||0)*PRECIOS[k]; return t; }
+
+// ---------- Dictado por voz ----------
+const UNI={cero:0,un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiun:21,veintiuno:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500};
+const esNum = t => /^\d+$/.test(t) || t in UNI;
+const valor = t => /^\d+$/.test(t) ? +t : UNI[t];
+function tipoMoneda(a,b){
+  const t = a + " " + (["centavos","centavo","plateada","plateadas","pesos","peso"].includes(b)?b:"");
+  if (/plateada/.test(t)) return "25 plateada";
+  if (/\b(25|veinticinco)\b/.test(t)) return "25 centavos";
+  if (/\b(50|cincuenta)\b/.test(t)) return "50 centavos";
+  if (/\b(10|diez)\b/.test(t)) return "10 pesos";
+  if (/\b(2|dos)\b/.test(t)) return "2 pesos";
+  if (/\b(1|un|uno)\b/.test(t)) return "1 peso";
+  return null;
+}
+function poner(tipo,cant){ const c=document.querySelector(`[data-m="${tipo}"]`); if(c&&cant!=null) c.value=cant; }
+window.dictar = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return alert("Este navegador no permite dictado. Usá Safari.");
+  const rec = new SR(); rec.lang = "es-AR"; rec.interimResults = false;
+  const btn = $("btnVoz"); btn.textContent = "Escuchando... hablá ahora";
+  rec.onresult = e => {
+    const txt = e.results[0][0].transcript.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    $("vozTexto").textContent = "Escuché: " + txt;
+    const tk = txt.replace(/[,.;]/g," , ").split(/\s+/).filter(Boolean);
+    let q = [];
+    for (let i=0;i<tk.length;i++){
+      const t = tk[i];
+      if (esNum(t)) q.push(valor(t));
+      else if (t==="y") continue;
+      else if ((t==="de"||t==="del") && q.length){
+        const tipo = tipoMoneda(tk[i+1]||"", tk[i+2]||"");
+        if (tipo) poner(tipo, q.reduce((a,b)=>a+b,0));
+        q = []; i++;
+      } else if (/^llaves?$/.test(t)){ poner("Llaves", q.length? q.reduce((a,b)=>a+b,0) : 1); q=[]; }
+      else if (t===",") q=[];
+    }
+    calc();
+  };
+  rec.onend = () => btn.textContent = "Dictar monedas con la voz";
+  rec.onerror = () => alert("No pude escuchar. Revisá el permiso del micrófono.");
+  rec.start();
+};
+
+// ---------- Direcciones en el mapa ----------
+async function geocodificar(dir, loc){
+  try{
+    const q = encodeURIComponent(`${dir}, ${loc||"Andino"}, Santa Fe, Argentina`);
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${q}`);
+    const j = await r.json();
+    return j[0] ? {lat:+j[0].lat, lon:+j[0].lon} : null;
+  }catch(e){ return null; }
+}
+async function casa(){
+  try{ const c = JSON.parse(localStorage.getItem("casa")); if (c) return c; }catch(e){}
+  const c = await geocodificar("Urquiza 354","Andino");
+  if (c) try{ localStorage.setItem("casa", JSON.stringify(c)); }catch(e){}
+  return c;
+}
+const metros = (a,b) => { const R=6371000, r=x=>x*Math.PI/180, dl=r(b.lat-a.lat), dn=r(b.lon-a.lon);
+  const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
+
+// ---------- Guardar, ruta, borrar ----------
+window.guardar = async () => {
+  const nombre=$("nombre").value.trim(), direccion=$("direccion").value.trim();
+  if (!nombre || !direccion) return alert("Falta nombre o dirección");
+  const monedas={}; document.querySelectorAll("[data-m]").forEach(i => monedas[i.dataset.m]=+i.value||0);
+  const loc=$("localidad").value, coord=await geocodificar(direccion, loc);
+  const { error } = await sb.from("vendedores").insert({
+    nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:loc,
+    dia:$("dia").value, hora:$("hora").value, monedas, coord, orden:999, retirado:false });
+  if (error) return alert("No se pudo guardar: " + error.message);
+  ["nombre","apellido","telefono","direccion","dia","hora"].forEach(id => $(id).value="");
+  document.querySelectorAll("[data-m]").forEach(i => i.value=0); calc(); $("vozTexto").textContent="";
+  if (!coord) alert("No pude ubicar esa dirección en el mapa. Revisala.");
+  cargar();
+};
+window.armarRuta = async () => {
+  $("estado").textContent = "Armando ruta...";
+  const inicio = await casa(); if (!inicio){ $("estado").textContent=""; return alert("No pude ubicar tu casa"); }
+  let pend = vendedores.filter(v => !v.retirado && v.coord), actual = inicio, n = 1, ups = [];
+  while (pend.length){
+    pend.sort((a,b) => metros(actual,a.coord)-metros(actual,b.coord));
+    const p = pend.shift(); ups.push(sb.from("vendedores").update({orden:n++}).eq("id",p.id)); actual = p.coord;
+  }
+  await Promise.all(ups); rutaKey=""; $("estado").textContent = "Ruta lista"; cargar();
+};
+window.limpiarRetirados = async () => {
+  const ids = vendedores.filter(v => v.retirado).map(v => v.id);
+  if (!ids.length) return alert("No hay vendedores retirados");
+  if (!confirm(`¿Borrar ${ids.length} vendedores ya retirados?`)) return;
+  await sb.from("vendedores").delete().in("id", ids); cargar();
+};
+window.cambiar = async (id,campo,valor) => { await sb.from("vendedores").update({[campo]:valor}).eq("id",id); cargar(); };
+window.borrar = async id => { if (confirm("¿Borrar este vendedor?")){ await sb.from("vendedores").delete().eq("id",id); cargar(); } };
+window.ir = id => {
+  const v = vendedores.find(x => x.id===id); if (!v) return;
+  const d = encodeURIComponent(`${v.direccion}, ${v.localidad||"Andino"}, Santa Fe, Argentina`);
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${d}&travelmode=driving`, "_blank");
+};
+window.retirarYSeguir = async id => {
+  if (procesando.has(id)) return; procesando.add(id);
+  await sb.from("vendedores").update({retirado:true}).eq("id",id);
+  rutaKey=""; await cargar();
+  if (!proxima()) alert("No quedan más paradas en la ruta");
+};
+
+// ---------- Próxima parada y mapa ----------
+const proxima = () => vendedores.filter(v => !v.retirado && v.orden<999 && v.coord).sort((a,b)=>a.orden-b.orden)[0];
+function dibujarProxima(){
+  const c=$("proxima"), p=proxima();
+  if (!p){ c.style.display="none"; return; }
+  c.style.display="block";
+  const d = miPos ? ` - a ${Math.round(metros(miPos,p.coord))} m` : "";
+  c.innerHTML = `<h3>Próxima parada${d}</h3><b>${esc(p.nombre)} ${esc(p.apellido)}</b><br><small>${esc(p.direccion)}, ${esc(p.localidad)}</small>
+   <p class="total">Pagar: ${pesos(totalDe(p))}</p>
+   <button onclick="ir('${p.id}')">Ir con Google Maps</button>
+   <button class="ok" onclick="retirarYSeguir('${p.id}')">Retirado, ir al siguiente</button>`;
+}
+async function dibujarMapa(){
+  if (!mapa){ mapa = L.map("mapa").setView([-32.7,-60.7],11); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"OpenStreetMap"}).addTo(mapa); }
+  if (miPos){ if(!mYo) mYo=L.circleMarker([miPos.lat,miPos.lon],{radius:8,color:"#2563eb"}).addTo(mapa); else mYo.setLatLng([miPos.lat,miPos.lon]); }
+  const p = proxima();
+  if (mDest){ mapa.removeLayer(mDest); mDest=null; }
+  if (!p){ if(linea){ mapa.removeLayer(linea); linea=null; } return; }
+  mDest = L.marker([p.coord.lat,p.coord.lon]).addTo(mapa).bindPopup(esc(p.nombre)+" "+esc(p.apellido));
+  const key = p.id + (miPos?"gps":"");
+  if (miPos && rutaKey!==key){
+    rutaKey = key;
+    let pts=[[miPos.lat,miPos.lon],[p.coord.lat,p.coord.lon]];
+    try{
+      const j = await (await fetch(`https://router.project-osrm.org/route/v1/driving/${miPos.lon},${miPos.lat};${p.coord.lon},${p.coord.lat}?overview=full&geometries=geojson`)).json();
+      pts = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+    }catch(e){}
+    if (linea) mapa.removeLayer(linea);
+    linea = L.polyline(pts,{color:"#047857",weight:5}).addTo(mapa);
+    mapa.fitBounds(linea.getBounds(),{padding:[20,20]});
+  }
+}
+
+// ---------- GPS y modo automático ----------
+window.cambiarModo = () => {
+  const a = $("modoAuto").checked;
+  try{ localStorage.setItem("modoAuto", a?"1":"0"); }catch(e){}
+  $("modoEstado").textContent = a ? "Automático: al llegar a unos 50 m se marca retirado y pasa a la siguiente. Dejá la pantalla prendida." : "Manual: vos tocás Retirado.";
+};
+try{ $("modoAuto").checked = localStorage.getItem("modoAuto")==="1"; }catch(e){}
+cambiarModo();
+if (navigator.geolocation) navigator.geolocation.watchPosition(pos => {
+  miPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
+  const p = proxima(); dibujarProxima(); dibujarMapa();
+  if (p && $("modoAuto").checked && metros(miPos,p.coord)<=RADIO) retirarYSeguir(p.id);
+}, () => { $("modoEstado").textContent += " (Sin GPS: revisá el permiso de ubicación)"; }, {enableHighAccuracy:true, maximumAge:5000});
+
+// ---------- Lista de vendedores ----------
+function dibujarLista(){
+  vendedores.sort((a,b) => (a.retirado-b.retirado) || (a.orden-b.orden) || (a.dia||"").localeCompare(b.dia||""));
+  let gran=0;
+  $("lista").innerHTML = vendedores.map(v => {
+    const t=totalDe(v); if(!v.retirado) gran+=t;
+    const det = Object.entries(v.monedas||{}).filter(([,c])=>c>0).map(([k,c])=>`${c} de ${k}`).join(", ");
+    return `<div class="card stop" style="${v.retirado?"opacity:.5":""}">
+     <b>${v.orden<999?`<span class="num">${v.orden}</span>`:""}${esc(v.nombre)} ${esc(v.apellido)}</b><br>
+     <small>${esc(v.direccion)}, ${esc(v.localidad)} - <a href="tel:${esc(v.telefono)}">${esc(v.telefono)}</a></small><br>
+     <small>${esc(det)||"Sin monedas"}</small>
+     <p class="total">Pagar: ${pesos(t)}</p>
+     <div class="grid">
+      <input type="date" value="${esc(v.dia)}" onchange="cambiar('${v.id}','dia',this.value)">
+      <input type="time" value="${esc(v.hora)}" onchange="cambiar('${v.id}','hora',this.value)">
+     </div>
+     <button onclick="ir('${v.id}')">Ir con Google Maps</button>
+     <div class="grid">
+      ${v.retirado ? `<button class="sec" onclick="cambiar('${v.id}','retirado',false)">Marcar pendiente</button>` : `<button class="sec" onclick="retirarYSeguir('${v.id}')">Retirado, ir al siguiente</button>`}
+      <button class="del" onclick="borrar('${v.id}')">Borrar</button>
+     </div></div>`;
+  }).join("") + `<div class="card"><b>Total pendiente a pagar: ${pesos(gran)}</b></div>`;
+}
+async function cargar(){
+  const { data, error } = await sb.from("vendedores").select("*");
+  if (error){ $("estado").textContent = "Error de conexión: " + error.message; return; }
+  vendedores = data || []; dibujarLista(); dibujarProxima(); dibujarMapa();
+}
+sb.channel("vendedores-cambios").on("postgres_changes",{event:"*",schema:"public",table:"vendedores"}, cargar).subscribe();
+cargar();
+</script>
+</body>
+</html>
