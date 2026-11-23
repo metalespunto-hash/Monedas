@@ -187,16 +187,26 @@
  .vacia{text-align:center;color:var(--muted);padding:28px 16px}
 
  /* Configuración */
- dialog{border:0;border-radius:22px;padding:0;width:min(560px,calc(100% - 20px));max-height:calc(100% - 30px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+ dialog{border:0;border-radius:22px;padding:0;width:min(560px,calc(100% - 20px));max-height:calc(100% - 30px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;overscroll-behavior:contain}
+ dialog[open]{display:flex;flex-direction:column}
+ dialog .db{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+ dialog .dh,dialog .df{flex:none}
+ body.modal main{overflow:hidden}
+ /* En el celular: Configuración ocupa toda la pantalla y WhatsApp sube desde abajo */
+ @media (max-width:640px){
+  dialog.full{width:100%;max-width:100%;height:100%;max-height:100%;margin:0;border-radius:0;box-shadow:none}
+  dialog.full .dh{padding-top:calc(12px + env(safe-area-inset-top))}
+  dialog.sheet{width:100%;max-width:100%;margin:auto 0 0;border-radius:22px 22px 0 0;max-height:92%}
+ }
  dialog::backdrop{background:rgba(15,23,42,.55)}
- .dh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
+ .dh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);background:var(--card)}
  .dh h2{margin:0;font-size:19px}
  .db{padding:6px 18px 10px}
  .db section{padding:14px 0;border-bottom:1px solid var(--line)}
  .db section:last-child{border:0}
  .db h3{margin:0 0 4px;font-size:16px}
  .db p.help{margin:0 0 12px;font-size:14px;color:var(--muted)}
- .df{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--card)}
+ .df{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
  .opt{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1.5px solid var(--line);border-radius:14px;margin-bottom:8px;cursor:pointer;background:var(--soft)}
  .opt input{margin-top:3px;width:20px;height:20px;accent-color:var(--brand);flex:none}
  .opt:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
@@ -294,7 +304,7 @@
 </nav>
 
 <!-- CONFIGURACIÓN -->
-<dialog id="cfg">
+<dialog id="cfg" class="full">
  <div class="dh"><h2>Configuración</h2><button class="btn ghost icon" onclick="$('cfg').close()" aria-label="Cerrar"><i data-i="x"></i></button></div>
  <div class="db">
   <section>
@@ -342,7 +352,7 @@
 </dialog>
 
 <!-- ELEGIR MENSAJE DE WHATSAPP -->
-<dialog id="wspDlg">
+<dialog id="wspDlg" class="sheet">
  <div class="dh"><h2>WhatsApp a <span id="wspNom"></span></h2><button class="btn ghost icon" onclick="$('wspDlg').close()" aria-label="Cerrar"><i data-i="x"></i></button></div>
  <div class="db">
   <button class="msgopt" style="margin-top:14px" onclick="enviarWsp(null)"><small>Mensaje predeterminado · tocá para mandarlo</small><span id="wspDef"></span></button>
@@ -355,7 +365,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-e";
+var VERSION="2026-11-23-f";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -922,6 +932,10 @@ function dibujarLista(){
 }
 function render(){ dibujarLista(); dibujarProxima(); dibujarMapa(); pintarRed(); }
 
+// ---------- Ventanas: mientras están abiertas, la pantalla de atrás no se mueve ----------
+function abrirDlg(d){ document.body.classList.add("modal"); d.showModal(); d.querySelector(".db").scrollTop = 0; }
+document.querySelectorAll("dialog").forEach(d => d.addEventListener("close", () => document.body.classList.remove("modal")));
+
 // ---------- Configuración ----------
 function aplicarLogo(){
   $("appleIcon").href = cfg.logo || "icons/apple-touch-icon.png";
@@ -938,7 +952,7 @@ window.abrirConfig = () => {
   $("cfgDir").value = cfg.dir; $("cfgLoc").value = cfg.loc; $("cfgRadio").value = cfg.radio;
   $("cfgLogo").src = cfg.logo || "icons/icon-192.png";
   pintarUbicCfg(); pintarRed();
-  $("cfg").showModal();
+  abrirDlg($("cfg"));
 };
 $("cfgDir").addEventListener("input", () => { cfgTemp.coord = null; pintarUbicCfg(); });
 $("cfgLoc").addEventListener("change", () => { if ($("cfgDir").value !== GPS_FIJO){ cfgTemp.coord = null; pintarUbicCfg(); } });
@@ -979,7 +993,7 @@ window.wsp = id => {
   $("wspNom").textContent = v.nombre;
   $("wspDef").textContent = armarMsg(cfg.mensaje || MENSAJE, v);
   $("wspOtro").value = "";
-  $("wspDlg").showModal();
+  abrirDlg($("wspDlg"));
 };
 window.enviarWsp = x => {
   if (!wspV) return;
