@@ -172,6 +172,11 @@
  .vname{flex:1;min-width:0}
  .vname b{font-size:17px;display:block}
  .vtot{font-weight:750;font-size:19px;color:var(--ok-ink);white-space:nowrap}
+ .vname{cursor:pointer}
+ .lapiz{font:inherit;font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px;border:1.5px solid var(--line);background:var(--soft);color:var(--brand-ink);
+  border-radius:10px;padding:5px 9px;cursor:pointer;flex:none;margin-left:2px}
+ .lapiz .i{width:15px;height:15px}
+ .next .lapiz{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#fff}
  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
  .chip{font-size:12px;font-weight:650;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
  .chip.coin{background:var(--gold-soft);color:var(--gold-ink);border-color:transparent}
@@ -365,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-f";
+var VERSION="2026-11-23-g";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -785,7 +790,7 @@ function dibujarProxima(){
   c.style.display="block";
   const d = miPos ? (m => m<1000 ? `a ${Math.round(m)} m` : `a ${(m/1000).toFixed(1).replace(".",",")} km`)(metros(miPos,p.coord)) : "";
   const w = cuando(p);
-  c.innerHTML = `<div class="top"><span class="tag">Próxima parada · #${p.orden}</span><b>${d}</b></div>
+  c.innerHTML = `<div class="top"><span class="tag">Próxima parada · #${p.orden}</span><span style="display:flex;gap:8px;align-items:center"><b>${d}</b><button class="lapiz" onclick="editar('${esc(p.id)}')" aria-label="Editar">${ico("edit")}Editar</button></span></div>
    <div class="nm">${esc(p.nombre)} ${esc(p.apellido)}</div>
    <div class="ln">${ico("pin")}<span>${esc(p.direccion)}, ${esc(p.localidad)}</span></div>
    ${w ? `<div class="ln">${ico("calendar")}<span>${esc(w)}</span></div>` : ""}
@@ -890,8 +895,9 @@ function dibujarLista(){
     return `<div class="card vend ${v.retirado?"done":""} ${ab?"abierto":""}">
      <div class="vh">
       ${v.orden<999 && !v.retirado ? `<span class="num">${v.orden}</span>` : ""}
-      <div class="vname"><b>${esc(v.nombre)} ${esc(v.apellido)}</b></div>
+      <div class="vname" onclick="editar('${id}')"><b>${esc(v.nombre)} ${esc(v.apellido)}</b></div>
       <div class="vtot">${pesos(t)}</div>
+      <button class="lapiz" onclick="editar('${id}')" aria-label="Editar">${ico("edit")}Editar</button>
      </div>
      <div class="meta">${ico("pin")}<span>${esc(v.direccion)}, ${esc(v.localidad)}</span></div>
      <div class="meta">${ico("calendar")}<span>${v.dia||v.hora ? esc(cuando(v)) : "Sin día ni hora"}</span></div>
