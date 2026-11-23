@@ -194,7 +194,7 @@
  /* Configuración */
  dialog{border:0;border-radius:22px;padding:0;width:min(560px,calc(100% - 20px));max-height:calc(100% - 30px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;overscroll-behavior:contain}
  dialog[open]{display:flex;flex-direction:column}
- dialog .db{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+ dialog .db{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
  dialog .dh,dialog .df{flex:none}
  body.modal main{overflow:hidden}
  /* En el celular: Configuración ocupa toda la pantalla y WhatsApp sube desde abajo */
@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-g";
+var VERSION="2026-11-23-h";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
