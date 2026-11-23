@@ -17,6 +17,7 @@ Tres pestañas con barra fija abajo (`tab()`): **Ruta** (próxima parada, armar 
 - Ruta: vecino más cercano desde el punto de salida (`armarRuta`).
 - Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet.
 - Precios de las monedas: constante `PRECIOS` en `index.html`. Localidades: `LOCALIDADES`.
+- WhatsApp: mensajes en `cfg.mensajes` (predeterminado `cfg.msgDef`, originales en `MENSAJES`), con {nombre} {total} {direccion} {cuando}. Si `cfg.wspPreguntar`, muestra el selector `#wspDlg`.
 
 ## Al hacer cambios
 - Subir `VERSION` en `index.html` (formato `AAAA-MM-DD-x`) para que los celulares se actualicen solos.
