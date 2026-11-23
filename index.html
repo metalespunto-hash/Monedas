@@ -200,9 +200,6 @@
  .opt small{display:block}
  .ok-line{font-size:13px;margin-top:8px;display:flex;gap:6px;align-items:center}
  .ok-line .i{width:16px;height:16px}
- .msgrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;margin-bottom:8px}
- .msgrow input[type=radio]{width:22px;height:22px;margin-top:14px;accent-color:var(--brand)}
- .msgrow .btn{margin-top:4px}
  .msgopt{font:inherit;text-align:left;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--soft);color:var(--ink);cursor:pointer;display:block}
  .msgopt:active{background:var(--brand-soft)}
  .msgopt small{display:block;color:var(--brand-ink);font-weight:700;margin-bottom:2px}
@@ -325,12 +322,10 @@
    </div>
   </section>
   <section>
-   <h3>Mensajes de WhatsApp</h3>
-   <p class="help">Marcá con el círculo cuál es el predeterminado. Podés usar {nombre}, {total}, {direccion} y {cuando}: se reemplazan solos con los datos del vendedor.</p>
-   <div id="cfgMsgs"></div>
-   <button class="btn ghost sm" onclick="agregarMsg()"><i data-i="plus"></i>Agregar mensaje</button>
-   <label class="opt" style="margin-top:10px"><input type="checkbox" id="cfgPreguntar"><span><b>Preguntar qué mensaje mandar</b><small>Al tocar WhatsApp te deja elegir un mensaje o escribir otro. Si está apagado, manda directo el predeterminado.</small></span></label>
-   <button class="btn ghost sm" onclick="msgsOriginales()">Volver a los mensajes originales</button>
+   <h3>Mensaje de WhatsApp</h3>
+   <p class="help">Es el mensaje que se manda al tocar WhatsApp. Donde pongas {nombre} aparece el nombre del vendedor.</p>
+   <textarea id="cfgMsg" rows="3"></textarea>
+   <button class="btn ghost sm" style="margin-top:8px" onclick="$('cfgMsg').value=MENSAJE">Volver al mensaje original</button>
   </section>
   <section>
    <h3>Sin internet</h3>
@@ -346,11 +341,10 @@
 <dialog id="wspDlg">
  <div class="dh"><h2>WhatsApp a <span id="wspNom"></span></h2><button class="btn ghost icon" onclick="$('wspDlg').close()" aria-label="Cerrar"><i data-i="x"></i></button></div>
  <div class="db">
-  <p class="help" style="margin:12px 0">Tocá un mensaje para mandarlo:</p>
-  <div id="wspOpts" class="stack"></div>
+  <button class="msgopt" style="margin-top:14px" onclick="enviarWsp(null)"><small>Mensaje predeterminado · tocá para mandarlo</small><span id="wspDef"></span></button>
   <label class="field" style="margin:16px 0 6px"><span>O escribí otro mensaje</span><textarea id="wspOtro" rows="3" placeholder="Escribí tu mensaje..."></textarea></label>
  </div>
- <div class="df"><button class="btn ghost" onclick="enviarWsp('')">Sin mensaje</button><button class="btn wsp" onclick="enviarWsp($('wspOtro').value)"><i data-i="wsp"></i>Mandar el mío</button></div>
+ <div class="df"><button class="btn ghost" onclick="$('wspDlg').close()">Cancelar</button><button class="btn wsp" onclick="enviarWsp($('wspOtro').value)"><i data-i="wsp"></i>Mandar el mío</button></div>
 </dialog>
 
 <div class="toast" id="toast"></div>
@@ -424,13 +418,8 @@ const LS = {
 };
 let vendedores = LS.get("vendedores", []);   // copia local (sirve sin internet)
 let cola = LS.get("cola", []);               // cambios que falta subir
-const MENSAJES = [
-  "Hola {nombre}, voy en camino a retirar las monedas.",
-  "Hola {nombre}, te escribo por la compra de monedas.",
-  "Hola {nombre}, ¿te queda bien que pase {cuando} a retirar las monedas? Son {total}."
-];
-let cfg = Object.assign({origen:"dir", dir:"Urquiza 354", loc:"Andino", coord:null, radio:50, logo:null,
-  mensajes:[...MENSAJES], msgDef:0, wspPreguntar:true}, LS.get("config", {}));
+const MENSAJE = "Hola {nombre}, voy en camino a retirar las monedas.";
+let cfg = Object.assign({origen:"dir", dir:"Urquiza 354", loc:"Andino", coord:null, radio:50, logo:null, mensaje:MENSAJE}, LS.get("config", {}));
 if (!cfg.coord && cfg.dir==="Urquiza 354" && cfg.loc==="Andino") cfg.coord = LS.get("casa", null);
 function guardarLocal(){ LS.set("vendedores", vendedores); LS.set("cola", cola); }
 
@@ -897,8 +886,8 @@ function pintarUbicCfg(){
   $("cfgUbic").innerHTML = cfgTemp.coord ? `${ico("check")} Lugar de salida ubicado en el mapa.` : `${ico("pin")} Se va a buscar en el mapa al guardar (hace falta internet).`;
 }
 window.abrirConfig = () => {
-  cfgTemp = {...cfg, mensajes:[...(cfg.mensajes||MENSAJES)]};
-  $("cfgPreguntar").checked = !!cfg.wspPreguntar; pintarMsgs();
+  cfgTemp = {...cfg};
+  $("cfgMsg").value = cfg.mensaje || MENSAJE;
   document.querySelectorAll('input[name=origen]').forEach(r => r.checked = r.value===cfg.origen);
   $("cfgDir").value = cfg.dir; $("cfgLoc").value = cfg.loc; $("cfgRadio").value = cfg.radio;
   $("cfgLogo").src = cfg.logo || "icons/icon-192.png";
@@ -931,29 +920,7 @@ window.elegirLogo = input => {
 };
 window.logoOriginal = () => { cfgTemp.logo = null; $("cfgLogo").src = "icons/icon-192.png"; };
 
-// Mensajes de WhatsApp en la configuración
-function leerMsgs(){
-  const tx = document.querySelectorAll("#cfgMsgs textarea");
-  if (tx.length) cfgTemp.mensajes = Array.from(tx, t => t.value);
-  const r = document.querySelector("#cfgMsgs input[name=msgDef]:checked");
-  if (r) cfgTemp.msgDef = +r.value;
-}
-function pintarMsgs(){
-  $("cfgMsgs").innerHTML = cfgTemp.mensajes.map((m,i) => `<div class="msgrow">
-    <input type="radio" name="msgDef" value="${i}" ${i===(cfgTemp.msgDef||0)?"checked":""} aria-label="Predeterminado">
-    <textarea rows="3">${esc(m)}</textarea>
-    <button class="btn danger icon sm" onclick="quitarMsg(${i})" aria-label="Borrar mensaje">${ico("trash")}</button></div>`).join("");
-}
-window.agregarMsg = () => { leerMsgs(); cfgTemp.mensajes.push("Hola {nombre}, "); pintarMsgs(); const t = document.querySelectorAll("#cfgMsgs textarea"); t[t.length-1].focus(); };
-window.quitarMsg = i => {
-  leerMsgs(); if (cfgTemp.mensajes.length <= 1) return toast("Tiene que quedar al menos un mensaje", "err");
-  cfgTemp.mensajes.splice(i,1);
-  if (cfgTemp.msgDef === i) cfgTemp.msgDef = 0; else if (cfgTemp.msgDef > i) cfgTemp.msgDef--;
-  pintarMsgs();
-};
-window.msgsOriginales = () => { cfgTemp.mensajes = [...MENSAJES]; cfgTemp.msgDef = 0; pintarMsgs(); };
-
-// Mandar WhatsApp
+// Mandar WhatsApp: el mensaje predeterminado o uno escrito en el momento
 function armarMsg(t, v){
   return String(t||"").replace(/\{nombre\}/g, v.nombre||"").replace(/\{apellido\}/g, v.apellido||"")
     .replace(/\{total\}/g, pesos(totalDe(v))).replace(/\{direccion\}/g, `${v.direccion||""}, ${v.localidad||""}`)
@@ -962,19 +929,16 @@ function armarMsg(t, v){
 let wspV = null;
 window.wsp = id => {
   const v = porId(id); if (!v || !v.telefono) return;
-  const msgs = cfg.mensajes && cfg.mensajes.length ? cfg.mensajes : MENSAJES, def = cfg.msgDef||0;
-  if (!cfg.wspPreguntar) return window.open(wspLink(v.telefono, armarMsg(msgs[def], v)), "_blank");
   wspV = v;
   $("wspNom").textContent = v.nombre;
+  $("wspDef").textContent = armarMsg(cfg.mensaje || MENSAJE, v);
   $("wspOtro").value = "";
-  const orden = [def, ...msgs.keys()].filter((x,i,a) => a.indexOf(x)===i && msgs[x]);
-  $("wspOpts").innerHTML = orden.map(i => `<button class="msgopt" onclick="enviarWsp(${i})">${i===def ? "<small>Predeterminado</small>" : ""}${esc(armarMsg(msgs[i], v))}</button>`).join("");
   $("wspDlg").showModal();
 };
 window.enviarWsp = x => {
   if (!wspV) return;
-  const msgs = cfg.mensajes && cfg.mensajes.length ? cfg.mensajes : MENSAJES;
-  const texto = typeof x === "number" ? armarMsg(msgs[x], wspV) : String(x||"").trim();
+  const texto = x === null ? armarMsg(cfg.mensaje || MENSAJE, wspV) : String(x||"").trim();
+  if (x !== null && !texto) return toast("Escribí el mensaje primero", "err");
   window.open(wspLink(wspV.telefono, texto), "_blank");
   $("wspDlg").close();
 };
@@ -984,11 +948,7 @@ window.guardarConfig = async () => {
   cfgTemp.dir = $("cfgDir").value.trim() || "Urquiza 354";
   cfgTemp.loc = $("cfgLoc").value;
   cfgTemp.radio = Math.min(500, Math.max(10, +$("cfgRadio").value || 50));
-  leerMsgs();
-  cfgTemp.mensajes = cfgTemp.mensajes.map(m => m.trim()).filter(Boolean);
-  if (!cfgTemp.mensajes.length) cfgTemp.mensajes = [...MENSAJES];
-  cfgTemp.msgDef = Math.min(cfgTemp.msgDef||0, cfgTemp.mensajes.length-1);
-  cfgTemp.wspPreguntar = $("cfgPreguntar").checked;
+  cfgTemp.mensaje = $("cfgMsg").value.trim() || MENSAJE;
   let aviso = "";
   if (!cfgTemp.coord && cfgTemp.dir !== GPS_FIJO){
     btn.disabled = true;
