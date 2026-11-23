@@ -8,7 +8,7 @@ App web (una sola página) para cargar vendedores de monedas, armar la ruta de r
 - `manifest.webmanifest` + `icons/`: logo del acceso directo (`icons/icon.svg` es la fuente).
 
 ## Pantalla
-Tres pestañas con barra fija abajo (`tab()`): **Ruta** (próxima parada, armar ruta, mapa), **Cargar** (formulario con total y Guardar fijos abajo) y **Vendedores** (buscador, filtro Pendientes/Retirados/Todos, tarjetas compactas que se abren con la flechita).
+Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. En el celular el mapa se mueve con dos dedos. Tres pestañas (`tab()`): **Ruta** (próxima parada, armar ruta, mapa), **Cargar** (formulario con total y Guardar fijos abajo) y **Vendedores** (buscador, filtro Pendientes/Retirados/Todos, tarjetas compactas que se abren con la flechita).
 
 ## Cómo funciona
 - Datos en Supabase, tabla `vendedores` (nombre, apellido, telefono, direccion, localidad, dia, hora, monedas{tipo:cantidad}, coord{lat,lon}, orden, retirado). Orden 999 = fuera de ruta.
@@ -17,6 +17,7 @@ Tres pestañas con barra fija abajo (`tab()`): **Ruta** (próxima parada, armar 
 - Ruta: vecino más cercano desde el punto de salida (`armarRuta`).
 - Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet.
 - Precios de las monedas: constante `PRECIOS` en `index.html`. Localidades: `LOCALIDADES`.
+- Editar vendedor: `editar(id)` carga los datos en la pestaña Cargar (`editId`); si cambia la dirección se vuelve a ubicar en el mapa.
 - WhatsApp: un mensaje predeterminado en `cfg.mensaje` (original en `MENSAJE`, acepta {nombre} {total} {direccion} {cuando}). Al tocar WhatsApp, `#wspDlg` deja mandar ese o escribir otro.
 
 ## Al hacer cambios
