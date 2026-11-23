@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,12 +28,14 @@
   --shadow:0 1px 2px rgba(0,0,0,.4);
  }}
  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
- html,body{margin:0}
- body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
+ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;height:100vh;height:100dvh;position:fixed;inset:0;width:100%}
+ button,.btn,nav.tabs,header.top{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
  .i{width:20px;height:20px;flex:none}
 
  /* Encabezado */
- header.top{position:sticky;top:0;z-index:1100;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;
+ header.top{position:relative;flex:none;z-index:1100;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(15,23,42,.18)}
  .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:18px;flex:1;min-width:0;letter-spacing:-.01em}
  .brand img{width:36px;height:36px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.25);object-fit:cover}
@@ -47,16 +49,17 @@
  .pill.off{background:#fbbf24;color:#3b2300}
  .pill.sync{background:rgba(255,255,255,.28)}
 
- main{max-width:760px;margin:0 auto;padding:14px 14px calc(96px + env(safe-area-inset-bottom))}
+ main{flex:1;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:14px max(14px, calc((100% - 760px) / 2)) 24px}
  .tab{display:none}.tab.on{display:block}
- nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:1100;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);
+ nav.tabs{position:relative;flex:none;z-index:1100;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,23,42,.08)}
  nav.tabs button{font:inherit;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:12px;font-weight:650;position:relative;cursor:pointer;border-radius:12px}
  nav.tabs button .i{width:24px;height:24px}
  nav.tabs button.on{color:var(--brand-ink);background:var(--brand-soft)}
  .badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--gold);color:#3b2300;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
  .badge:empty{display:none}
- .savebar{position:sticky;bottom:calc(74px + env(safe-area-inset-bottom));z-index:500;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+ .savebar{position:sticky;bottom:0;z-index:500;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
   border-radius:var(--r);padding:10px 10px 10px 16px;box-shadow:0 8px 30px rgba(15,23,42,.15)}
  .savebar div{flex:1}.savebar small{display:block;font-size:12px;font-weight:600}
  .savebar b{font-size:24px;color:var(--ok-ink);letter-spacing:-.02em}
@@ -206,7 +209,7 @@
  .logo-row{display:flex;gap:14px;align-items:center}
  .logo-row img{width:72px;height:72px;border-radius:17px;box-shadow:var(--shadow);border:1px solid var(--line);object-fit:cover;flex:none}
 
- .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f172a;color:#fff;
+ .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f172a;color:#fff;
   padding:12px 18px;border-radius:14px;font-weight:600;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.3);transition:.25s;z-index:3000;width:max-content;max-width:calc(100% - 32px);text-align:center}
  .toast.show{opacity:1;transform:translate(-50%,0)}
  .toast.err{background:#b91c1c}
@@ -243,7 +246,7 @@
 <!-- PESTAÑA CARGAR -->
 <section class="tab" id="tab-cargar">
 <div class="card">
- <h2><i data-i="userplus"></i>Nuevo vendedor</h2>
+ <h2><i data-i="userplus"></i><span id="tituloForm">Nuevo vendedor</span></h2>
  <div class="grid2">
   <label class="field"><span>Nombre</span><input id="nombre" placeholder="Juan" autocomplete="off"></label>
   <label class="field"><span>Apellido</span><input id="apellido" placeholder="Pérez" autocomplete="off"></label>
@@ -262,6 +265,7 @@
  </div>
 </div>
 <div class="savebar">
+ <button class="btn ghost icon" id="btnCancelarEd" onclick="cancelarEdicion()" style="display:none" aria-label="Cancelar edición"><i data-i="x"></i></button>
  <div><small>Total a pagar</small><b id="totalForm">$0</b></div>
  <button class="btn" id="btnGuardar" onclick="guardar()"><i data-i="check"></i>Guardar</button>
 </div>
@@ -351,7 +355,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-d";
+var VERSION="2026-11-23-e";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -450,6 +454,7 @@ const ICONOS = {
   upload:'<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   chev:'<path d="m6 9 6 6 6-6"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   wsp:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M9 10.5c.5 2 2.5 4 4.5 4.5l1.3-1.3 2 1-.3 1.3c-3.5.5-8-4-7.5-7.5L10.3 8l1 2z"/>'
 };
 // Link de WhatsApp. Acepta números argentinos como "3476 123456", "03476 15 123456" o "+54 9 3476 123456".
@@ -639,17 +644,57 @@ window.guardar = () => {
   const nombre=$("nombre").value.trim(), direccion=$("direccion").value.trim();
   if (!nombre || !direccion) return toast("Falta nombre o dirección", "err");
   const monedas={}; document.querySelectorAll("[data-m]").forEach(i => monedas[i.dataset.m]=+i.value||0);
-  const datos = { nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:$("localidad").value,
-    dia:$("dia").value, hora:$("hora").value, monedas, coord:null, orden:999, retirado:false };
+  const base = { nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:$("localidad").value,
+    dia:$("dia").value, hora:$("hora").value, monedas };
+  if (editId){
+    const v = porId(editId);
+    if (!v){ limpiarForm(); return toast("Ese vendedor ya no existe", "err"); }
+    const mudo = v.direccion !== base.direccion || v.localidad !== base.localidad;
+    const datos = mudo ? {...base, coord:null} : base;
+    const ins = cola.find(o => o.t === "ins" && o.id === v.id);
+    if (ins){ Object.assign(ins.datos, datos); Object.assign(v, datos); }   // todavía no se subió: se corrige lo que va a subir
+    else cambiarLocal(v.id, datos);
+    limpiarForm(); hecho(); tab("lista");
+    toast("Cambios guardados");
+    if (mudo && !ins && navigator.onLine) geocodificar(base.direccion, base.localidad).then(c => {
+      if (c){ cambiarLocal(v.id, {coord:c}); hecho(); } else toast("No encontré la dirección nueva en el mapa. Revisala.", "err");
+    });
+    return;
+  }
+  const datos = {...base, coord:null, orden:999, retirado:false};
   const id = "tmp-" + Date.now() + Math.random().toString(36).slice(2,7);
   vendedores.push({...datos, id});
   cola.push({t:"ins", id, datos});
-  ["nombre","apellido","telefono","direccion","dia","hora"].forEach(i => { $(i).value=""; $(i).classList.remove("has"); });
-  $("dia").classList.add("vacio"); $("hora").classList.add("vacio");
-  document.querySelectorAll("[data-m]").forEach(i => i.value=""); calc(); $("vozTexto").textContent="";
+  limpiarForm();
   toast(navigator.onLine ? "Vendedor guardado" : "Guardado en el celular. Se sube cuando vuelva internet.");
   hecho();
 };
+let editId = null;
+function limpiarForm(){
+  editId = null;
+  ["nombre","apellido","telefono","direccion","dia","hora"].forEach(i => $(i).value = "");
+  $("dia").classList.add("vacio"); $("hora").classList.add("vacio");
+  document.querySelectorAll("[data-m]").forEach(i => i.value=""); calc(); $("vozTexto").textContent="";
+  $("tituloForm").textContent = "Nuevo vendedor";
+  $("btnGuardar").lastChild.textContent = "Guardar";
+  $("btnCancelarEd").style.display = "none";
+}
+window.editar = id => {
+  const v = porId(id); if (!v) return;
+  limpiarForm();
+  editId = v.id;
+  ["nombre","apellido","telefono","direccion"].forEach(k => $(k).value = v[k] || "");
+  $("localidad").value = LOCALIDADES.includes(v.localidad) ? v.localidad : "Andino";
+  $("dia").value = v.dia || ""; $("hora").value = v.hora ? String(v.hora).slice(0,5) : "";
+  $("dia").classList.toggle("vacio", !v.dia); $("hora").classList.toggle("vacio", !v.hora);
+  document.querySelectorAll("[data-m]").forEach(i => i.value = v.monedas?.[i.dataset.m] || "");
+  calc();
+  $("tituloForm").textContent = `Editar a ${v.nombre}`;
+  $("btnGuardar").lastChild.textContent = "Guardar cambios";
+  $("btnCancelarEd").style.display = "grid";
+  tab("cargar");
+};
+window.cancelarEdicion = () => { limpiarForm(); tab("lista"); };
 window.armarRuta = async () => {
   estado("Armando ruta...");
   if (navigator.onLine){
@@ -751,7 +796,7 @@ const marca = (cls, html, size) => L.divIcon({className:"", html:`<div class="mk
 async function dibujarMapa(){
   if (!window.L) return;
   if (!mapa){
-    mapa = L.map("mapa", {zoomControl:true}).setView([-32.67,-60.87], 11);
+    mapa = L.map("mapa", {zoomControl:true, dragging:!L.Browser.mobile, tap:false, scrollWheelZoom:false}).setView([-32.67,-60.87], 11);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, crossOrigin:"anonymous", attribution:"© OpenStreetMap"}).addTo(mapa);
     capa = L.layerGroup().addTo(mapa);
   }
@@ -805,7 +850,7 @@ window.tab = t => {
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + t));
   document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
   try{ localStorage.setItem("tab", t); }catch(e){}
-  window.scrollTo(0, 0);
+  document.querySelector("main").scrollTop = 0;
   if (t === "ruta" && mapa) setTimeout(() => { mapa.invalidateSize(); rutaKey = ""; dibujarMapa(); }, 60);
 };
 let filtro = "pend";
@@ -858,8 +903,11 @@ function dibujarLista(){
        <label class="field"><span>${ico("clock")}Hora</span><input type="time" class="${v.hora?"":"vacio"}" value="${esc(v.hora ? String(v.hora).slice(0,5) : "")}" onchange="cambiar('${id}','hora',this.value)"></label>
       </div>
       <div class="grid2" style="margin-top:10px">
-       ${!v.coord && !esTmp(v.id) ? `<button class="btn ghost sm" onclick="reubicar('${id}')">${ico("crosshair")}Ubicar</button>` : "<span></span>"}
+       <button class="btn ghost sm" onclick="editar('${id}')">${ico("edit")}Editar</button>
        <button class="btn danger sm" onclick="borrar('${id}')">${ico("trash")}Borrar</button>
+      </div>
+      ${!v.coord && !esTmp(v.id) ? `<button class="btn ghost sm" style="margin-top:8px" onclick="reubicar('${id}')">${ico("crosshair")}Buscar de nuevo en el mapa</button>` : ""}
+      <div>
       </div>
      </div>
     </div>`;
