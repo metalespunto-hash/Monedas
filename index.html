@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-h";
+var VERSION="2026-11-23-i";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -473,15 +473,32 @@ const ICONOS = {
   wsp:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M9 10.5c.5 2 2.5 4 4.5 4.5l1.3-1.3 2 1-.3 1.3c-3.5.5-8-4-7.5-7.5L10.3 8l1 2z"/>'
 };
 // Link de WhatsApp. Acepta números argentinos como "3476 123456", "03476 15 123456" o "+54 9 3476 123456".
-function wspLink(tel, msg){
+function numWsp(tel){
   let d = String(tel||"").replace(/\D/g, "");
   if (d.startsWith("00")) d = d.slice(2);
   if (d.startsWith("54")) d = d.slice(2);
   if (d.startsWith("9") && d.length === 11) d = d.slice(1);
   if (d.startsWith("0")) d = d.slice(1);
   if (d.length === 12) for (const i of [2,3,4]) if (d.substr(i,2) === "15"){ d = d.slice(0,i) + d.slice(i+2); break; }
-  const num = d.length === 10 ? "549" + d : d;
-  return `https://wa.me/${num}` + (msg ? `?text=${encodeURIComponent(msg)}` : "");
+  return d.length === 10 ? "549" + d : d;
+}
+const wspLink = (tel, msg) => `https://wa.me/${numWsp(tel)}` + (msg ? `?text=${encodeURIComponent(msg)}` : "");
+const wspApp = (tel, msg) => `whatsapp://send?phone=${numWsp(tel)}` + (msg ? `&text=${encodeURIComponent(msg)}` : "");
+
+// Abrir otra app (WhatsApp, Google Maps). En iPhone se abre la app directo, sin pasar por una
+// ventana de navegador que después queda en blanco al volver. Si la app no está instalada, abre la web.
+const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function abrirApp(appUrl, webUrl){
+  if (!esIOS) return window.open(webUrl, "_blank");
+  let salio = false;
+  const marcar = () => { salio = true; };
+  const vis = () => { if (document.hidden) salio = true; };
+  document.addEventListener("visibilitychange", vis); window.addEventListener("pagehide", marcar); window.addEventListener("blur", marcar);
+  location.href = appUrl;
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", vis); window.removeEventListener("pagehide", marcar); window.removeEventListener("blur", marcar);
+    if (!salio && !document.hidden) window.open(webUrl, "_blank");
+  }, 2500);
 }
 const ico = n => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n]||""}</svg>`;
 document.querySelectorAll("[data-i]").forEach(el => el.outerHTML = ico(el.dataset.i));
@@ -755,7 +772,7 @@ window.reubicar = async id => {
 window.ir = id => {
   const v = porId(id); if (!v) return;
   const d = v.coord && !v.direccion ? `${v.coord.lat},${v.coord.lon}` : encodeURIComponent(`${v.direccion}, ${v.localidad||"Andino"}, Santa Fe, Argentina`);
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${d}&travelmode=driving`, "_blank");
+  abrirApp(`comgooglemaps://?daddr=${d}&directionsmode=driving`, `https://www.google.com/maps/dir/?api=1&destination=${d}&travelmode=driving`);
 };
 window.retirarYSeguir = id => {
   const v = porId(id); if (!v || procesando.has(String(v.id))) return;
@@ -1005,7 +1022,7 @@ window.enviarWsp = x => {
   if (!wspV) return;
   const texto = x === null ? armarMsg(cfg.mensaje || MENSAJE, wspV) : String(x||"").trim();
   if (x !== null && !texto) return toast("Escribí el mensaje primero", "err");
-  window.open(wspLink(wspV.telefono, texto), "_blank");
+  abrirApp(wspApp(wspV.telefono, texto), wspLink(wspV.telefono, texto));
   $("wspDlg").close();
 };
 window.guardarConfig = async () => {
