@@ -61,7 +61,7 @@
  .badge:empty{display:none}
  .savebar{position:sticky;bottom:0;z-index:500;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
   border-radius:var(--r);padding:10px 10px 10px 16px;box-shadow:0 8px 30px rgba(15,23,42,.15)}
- .savebar div{flex:1}.savebar small{display:block;font-size:12px;font-weight:600}
+ .savebar div{flex:1}.savebar small{display:block;font-size:12px;font-weight:600;white-space:nowrap}
  .savebar b{font-size:24px;color:var(--ok-ink);letter-spacing:-.02em}
  .savebar .btn{width:auto;padding:12px 22px}
  .sub{display:flex;align-items:center;justify-content:space-between;margin:16px 0 0}
@@ -676,7 +676,6 @@ function limpiarForm(){
   $("dia").classList.add("vacio"); $("hora").classList.add("vacio");
   document.querySelectorAll("[data-m]").forEach(i => i.value=""); calc(); $("vozTexto").textContent="";
   $("tituloForm").textContent = "Nuevo vendedor";
-  $("btnGuardar").lastChild.textContent = "Guardar";
   $("btnCancelarEd").style.display = "none";
 }
 window.editar = id => {
@@ -690,7 +689,6 @@ window.editar = id => {
   document.querySelectorAll("[data-m]").forEach(i => i.value = v.monedas?.[i.dataset.m] || "");
   calc();
   $("tituloForm").textContent = `Editar a ${v.nombre}`;
-  $("btnGuardar").lastChild.textContent = "Guardar cambios";
   $("btnCancelarEd").style.display = "grid";
   tab("cargar");
 };
