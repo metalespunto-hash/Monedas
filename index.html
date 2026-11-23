@@ -2,84 +2,300 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Monedas">
 <title>Compra de monedas</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" id="favicon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" id="appleIcon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <style>
- *{box-sizing:border-box}
- body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#eef0f2;color:#14181c}
- header{background:#1f2937;color:#fff;padding:12px 18px;font-size:20px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px}
- header button{width:auto;margin:0;padding:9px 16px;font-size:16px;background:#374151}
- main{max-width:900px;margin:auto;padding:12px}
- .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0002}
- h3{margin:0 0 8px}
- input,select,button{font-size:17px;padding:11px;margin:3px 0;border:1px solid #bbb;border-radius:8px;width:100%}
- button{background:#2563eb;color:#fff;border:none;font-weight:600}
- button.sec{background:#6b7280} button.del{background:#dc2626} button.ok{background:#047857;font-size:20px;padding:15px}
- .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
- .coins{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin:8px 0}
- .coins label{font-size:13px;color:#444;display:block}
- .stop{border-left:6px solid #2563eb}
- .total{font-size:21px;font-weight:700;color:#047857;margin:6px 0}
- .num{background:#2563eb;color:#fff;border-radius:50%;padding:2px 10px;margin-right:6px}
- .next{border:3px solid #047857;background:#ecfdf5}
- .modo{display:flex;align-items:center;gap:10px}.modo input{width:auto;margin:0}
- #mapa{height:300px;border-radius:10px;margin-top:8px}
- small{color:#555} a{color:#2563eb}
+ :root{
+  --bg:#eef2f5;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--soft:#f6f8fa;
+  --brand:#0f766e;--brand-d:#115e59;--brand-soft:#ccfbf1;--brand-ink:#0f766e;
+  --gold:#f59e0b;--gold-soft:#fef3c7;--gold-ink:#92400e;
+  --danger:#dc2626;--danger-soft:#fee2e2;--ok:#16a34a;--ok-soft:#dcfce7;--ok-ink:#15803d;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.06);--r:18px;
+ }
+ @media (prefers-color-scheme:dark){:root{
+  --bg:#0b1117;--card:#141c25;--ink:#e6edf3;--muted:#8fa0b4;--line:#253244;--soft:#1b2531;
+  --brand:#0d9488;--brand-d:#0f4f4a;--brand-soft:#123a37;--brand-ink:#5eead4;
+  --gold-soft:#3a2d0c;--gold-ink:#fcd34d;--danger:#f87171;--danger-soft:#3b1a1a;--ok-soft:#12301d;--ok-ink:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+ }}
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+ html,body{margin:0}
+ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
+ .i{width:20px;height:20px;flex:none}
+
+ /* Encabezado */
+ header.top{position:sticky;top:0;z-index:1100;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(15,23,42,.18)}
+ .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:18px;flex:1;min-width:0;letter-spacing:-.01em}
+ .brand img{width:36px;height:36px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.25);object-fit:cover}
+ .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .brand .corto{display:none}
+ @media(max-width:440px){.brand .largo{display:none}.brand .corto{display:inline}}
+ .hbtn{width:42px;height:42px;border-radius:12px;border:0;background:rgba(255,255,255,.15);color:#fff;display:grid;place-items:center;padding:0;cursor:pointer;flex:none}
+ .hbtn:active{background:rgba(255,255,255,.28)}
+ .pill{font-size:12px;font-weight:650;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.16);display:flex;align-items:center;gap:5px;white-space:nowrap;border:0;color:#fff;cursor:pointer}
+ .pill .i{width:15px;height:15px}
+ .pill.off{background:#fbbf24;color:#3b2300}
+ .pill.sync{background:rgba(255,255,255,.28)}
+
+ main{max-width:760px;margin:0 auto;padding:14px 14px calc(40px + env(safe-area-inset-bottom))}
+ .card{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--line)}
+ .card h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+ .card h2 .i{color:var(--brand-ink)}
+ small,.muted{color:var(--muted)}
+ a{color:var(--brand-ink)}
+
+ /* Campos */
+ .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+ .field>span{font-size:13px;font-weight:650;color:var(--muted);display:flex;gap:6px;align-items:center}
+ .field>span .i{width:16px;height:16px}
+ input:not([type=radio]):not([type=checkbox]):not([type=file]),select{font:inherit;font-size:16px;width:100%;padding:12px 13px;border:1.5px solid var(--line);border-radius:12px;
+  background:var(--soft);color:var(--ink);outline:none;min-height:50px;-webkit-appearance:none;appearance:none;margin:0}
+ input:focus,select:focus{border-color:var(--brand);background:var(--card);box-shadow:0 0 0 4px rgba(13,148,136,.18)}
+ input::placeholder{color:#94a3b8}
+ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:18px;padding-right:40px}
+ input[type=date],input[type=time]{display:block;text-align:left}
+ input::-webkit-date-and-time-value{text-align:left}
+ input.vacio{color:var(--muted)}
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .stack{display:grid;gap:10px}
+ @media(max-width:460px){.grid2.wrap{grid-template-columns:1fr}}
+
+ /* Botones */
+ .btn{font:inherit;font-weight:650;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;
+  padding:12px 16px;border-radius:13px;border:0;cursor:pointer;background:var(--brand);color:#fff;text-decoration:none;transition:transform .08s,filter .15s;margin:0}
+ .btn:active{transform:scale(.98);filter:brightness(.95)}
+ .btn:disabled{opacity:.55}
+ .btn.ghost{background:var(--soft);color:var(--ink);border:1.5px solid var(--line)}
+ .btn.danger{background:var(--danger-soft);color:var(--danger)}
+ .btn.go{background:var(--ok);font-size:18px;min-height:58px}
+ .btn.sm{min-height:44px;font-size:15px;padding:10px 12px}
+ .btn.icon{width:44px;padding:0;flex:none}
+ .btn.light{background:rgba(255,255,255,.16);color:#fff;border:1.5px solid rgba(255,255,255,.25)}
+
+ /* Monedas */
+ .coins{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:16px 0 12px}
+ .coin{background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:10px 10px 10px;transition:background .15s,border-color .15s}
+ .coin.has{border-color:var(--gold);background:var(--gold-soft)}
+ .coin .name{font-weight:700;font-size:14px}
+ .coin .price{font-size:12px;color:var(--muted)}
+ .stepper{display:flex;align-items:center;gap:6px;margin-top:8px}
+ .stepper button{width:38px;height:42px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;flex:none;padding:0;cursor:pointer}
+ .stepper button:active{background:var(--line)}
+ .stepper button .i{width:18px;height:18px}
+ .stepper input{text-align:center;font-weight:750;font-size:18px !important;padding:6px 4px !important;min-height:42px !important;background:var(--card) !important}
+ .totalbar{display:flex;justify-content:space-between;align-items:center;background:var(--ok-soft);color:var(--ok-ink);border-radius:14px;padding:12px 16px;margin:14px 0;font-weight:650}
+ .totalbar b{font-size:26px;letter-spacing:-.02em}
+ .voz{display:flex;gap:10px;align-items:center}
+ #vozTexto{display:block;margin-top:6px}
+
+ /* Recorrido */
+ .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+ .stat{background:var(--soft);border-radius:14px;padding:10px 12px;min-width:0}
+ .stat small{display:block;font-size:12px;font-weight:600}
+ .stat b{font-size:20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .stat.full{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+ .stat.full b{font-size:15px}
+ .stat.full .i{color:var(--brand-ink)}
+ .stat.full button{margin-left:auto;width:auto;min-height:36px;padding:6px 12px;font-size:14px}
+ .switch{display:flex;align-items:center;gap:12px;padding:12px 2px 4px;cursor:pointer}
+ .switch input{position:absolute;opacity:0;pointer-events:none}
+ .switch .tr{width:50px;height:30px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .2s}
+ .switch .tr::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+ .switch input:checked + .tr{background:var(--ok)}
+ .switch input:checked + .tr::after{transform:translateX(20px)}
+ .switch b{display:block}
+ #mapa{height:200px;border-radius:14px;margin:12px 0;border:1px solid var(--line);z-index:0}
+ .mk{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#0f766e;border:2.5px solid #0f766e;font:700 12px system-ui,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+ .mk.next{background:#f59e0b;border-color:#92400e;color:#3b2300;width:34px;height:34px;font-size:14px}
+ .mk.home{background:#0f766e;color:#fff;border-color:#fff}
+ .mk.home .i{width:16px;height:16px}
+ .yo{width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 6px rgba(37,99,235,.25)}
+ #estado{display:block;margin-top:8px;min-height:1em}
+
+ /* Próxima parada */
+ .next{background:linear-gradient(140deg,#0f766e,#134e4a);color:#fff;border:0}
+ .next .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+ .tag{background:rgba(255,255,255,.18);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:650}
+ .next .nm{font-size:22px;font-weight:750;letter-spacing:-.01em}
+ .next .ln{display:flex;gap:6px;align-items:center;opacity:.92;margin-top:4px}
+ .next .ln .i{width:17px;height:17px}
+ .next .pay{display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.18);border-radius:14px;padding:10px 14px;margin:12px 0}
+ .next .pay b{font-size:26px}
+ .next .stack{gap:8px}
+
+ /* Lista */
+ .sect{display:flex;justify-content:space-between;align-items:baseline;margin:22px 4px 10px}
+ .sect h2{margin:0;font-size:18px}
+ .vend .vh{display:flex;align-items:flex-start;gap:10px}
+ .num{background:var(--brand);color:#fff;border-radius:10px;min-width:30px;height:30px;display:grid;place-items:center;font-weight:750;font-size:14px;flex:none}
+ .vname{flex:1;min-width:0}
+ .vname b{font-size:17px;display:block}
+ .vtot{font-weight:750;font-size:19px;color:var(--ok-ink);white-space:nowrap}
+ .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+ .chip{font-size:12px;font-weight:650;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+ .chip.coin{background:var(--gold-soft);color:var(--gold-ink);border-color:transparent}
+ .chip.warn{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+ .chip.done{background:var(--ok-soft);color:var(--ok-ink);border-color:transparent}
+ .chip.up{background:#dbeafe;color:#1d4ed8;border-color:transparent}
+ .meta{display:flex;gap:7px;align-items:center;color:var(--muted);font-size:14px;margin-top:8px}
+ .meta .i{width:16px;height:16px}
+ .meta a{font-weight:600}
+ .when{margin-top:12px}
+ .acts{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px}
+ .vend.done{opacity:.6}
+ .vacia{text-align:center;color:var(--muted);padding:28px 16px}
+
+ /* Configuración */
+ dialog{border:0;border-radius:22px;padding:0;width:min(560px,calc(100% - 20px));max-height:calc(100% - 30px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+ dialog::backdrop{background:rgba(15,23,42,.55)}
+ .dh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
+ .dh h2{margin:0;font-size:19px}
+ .db{padding:6px 18px 10px}
+ .db section{padding:14px 0;border-bottom:1px solid var(--line)}
+ .db section:last-child{border:0}
+ .db h3{margin:0 0 4px;font-size:16px}
+ .db p.help{margin:0 0 12px;font-size:14px;color:var(--muted)}
+ .df{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--card)}
+ .opt{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1.5px solid var(--line);border-radius:14px;margin-bottom:8px;cursor:pointer;background:var(--soft)}
+ .opt input{margin-top:3px;width:20px;height:20px;accent-color:var(--brand);flex:none}
+ .opt:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+ .opt small{display:block}
+ .ok-line{font-size:13px;margin-top:8px;display:flex;gap:6px;align-items:center}
+ .ok-line .i{width:16px;height:16px}
+ .logo-row{display:flex;gap:14px;align-items:center}
+ .logo-row img{width:72px;height:72px;border-radius:17px;box-shadow:var(--shadow);border:1px solid var(--line);object-fit:cover;flex:none}
+
+ .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f172a;color:#fff;
+  padding:12px 18px;border-radius:14px;font-weight:600;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.3);transition:.25s;z-index:3000;width:max-content;max-width:calc(100% - 32px);text-align:center}
+ .toast.show{opacity:1;transform:translate(-50%,0)}
+ .toast.err{background:#b91c1c}
 </style>
 </head>
 <body>
-<header><span>Compra de monedas</span><button onclick="actualizar()">Actualizar</button></header>
+<header class="top">
+ <div class="brand"><img id="logoTop" src="icons/icon-192.png" alt=""><span class="largo">Compra de monedas</span><span class="corto">Monedas</span></div>
+ <button class="pill" id="red" onclick="abrirConfig()"></button>
+ <button class="hbtn" onclick="actualizar()" aria-label="Actualizar" title="Actualizar"><i data-i="refresh"></i></button>
+ <button class="hbtn" onclick="abrirConfig()" aria-label="Configuración" title="Configuración"><i data-i="sliders"></i></button>
+</header>
+
 <main>
-
-<div class="card">
- <h3>Nuevo vendedor</h3>
- <div class="grid">
-  <input id="nombre" placeholder="Nombre">
-  <input id="apellido" placeholder="Apellido">
-  <input id="telefono" placeholder="Teléfono" type="tel">
-  <input id="direccion" placeholder="Dirección (calle y número)">
- </div>
- <select id="localidad">
-  <option>Andino</option><option>Aldao</option><option>Puerto General San Martín</option><option>Timbúes</option><option>San Lorenzo</option><option>Beltrán</option><option>Bermúdez</option><option>Baigorria</option><option>Cañada de Gómez</option><option>Totora</option><option>Luis Palacios</option><option>Maciel</option><option>La Ribera</option><option>Rosario</option>
- </select>
- <div class="coins" id="coins"></div>
- <button class="sec" id="btnVoz" onclick="dictar()">Dictar monedas con la voz</button>
- <small id="vozTexto"></small>
- <div class="grid">
-  <input id="dia" type="date"><input id="hora" type="time">
- </div>
- <p class="total" id="totalForm">Total a pagar: $0</p>
- <button onclick="guardar()">Guardar vendedor</button>
-</div>
-
-<div class="card">
- <button onclick="armarRuta()">Armar ruta por cercanía desde mi casa</button>
- <button class="sec" onclick="limpiarRetirados()">Borrar todos los retirados</button>
- <small id="estado"></small>
-</div>
 
 <div class="card next" id="proxima" style="display:none"></div>
 
 <div class="card">
- <label class="modo"><input type="checkbox" id="modoAuto" onchange="cambiarModo()"><b>Modo automático</b></label>
- <small id="modoEstado"></small>
- <div id="mapa"></div>
+ <h2><i data-i="userplus"></i>Nuevo vendedor</h2>
+ <div class="grid2 wrap">
+  <label class="field"><span>Nombre</span><input id="nombre" placeholder="Ej: Juan" autocomplete="off"></label>
+  <label class="field"><span>Apellido</span><input id="apellido" placeholder="Ej: Pérez" autocomplete="off"></label>
+  <label class="field"><span>Teléfono</span><input id="telefono" placeholder="Ej: 3476 123456" type="tel" autocomplete="off"></label>
+  <label class="field"><span>Dirección</span><input id="direccion" placeholder="Calle y número" autocomplete="off"></label>
+ </div>
+ <label class="field" style="margin-top:10px"><span>Localidad</span><select id="localidad"></select></label>
+
+ <div class="coins" id="coins"></div>
+
+ <button class="btn ghost" id="btnVoz" onclick="dictar()"><i data-i="mic"></i><span>Dictar monedas con la voz</span></button>
+ <small id="vozTexto"></small>
+
+ <div class="grid2" style="margin-top:14px">
+  <label class="field"><span><i data-i="calendar"></i>Día de retiro</span><input id="dia" type="date"></label>
+  <label class="field"><span><i data-i="clock"></i>Hora de retiro</span><input id="hora" type="time"></label>
+ </div>
+
+ <div class="totalbar"><span>Total a pagar</span><b id="totalForm">$0</b></div>
+ <button class="btn" id="btnGuardar" onclick="guardar()"><i data-i="check"></i>Guardar vendedor</button>
 </div>
 
+<div class="card">
+ <h2><i data-i="route"></i>Recorrido</h2>
+ <div class="stats">
+  <div class="stat"><small>Por retirar</small><b id="stPend">0</b></div>
+  <div class="stat"><small>Total a pagar</small><b id="stTotal">$0</b></div>
+  <div class="stat full"><i data-i="home"></i><div style="min-width:0"><small>Salida</small><b id="stOrigen">-</b></div><button class="btn ghost" onclick="abrirConfig()">Cambiar</button></div>
+ </div>
+ <button class="btn" onclick="armarRuta()"><i data-i="route"></i>Armar ruta por cercanía</button>
+ <label class="switch"><input type="checkbox" id="modoAuto" onchange="cambiarModo()"><span class="tr"></span><span><b>Modo automático</b><small id="modoEstado"></small></span></label>
+ <div id="mapa"></div>
+ <button class="btn ghost sm" onclick="limpiarRetirados()"><i data-i="trash"></i>Borrar todos los retirados</button>
+ <small id="estado"></small>
+</div>
+
+<div class="sect"><h2>Vendedores</h2><small id="cuenta"></small></div>
 <div id="lista"></div>
 </main>
+
+<!-- CONFIGURACIÓN -->
+<dialog id="cfg">
+ <div class="dh"><h2>Configuración</h2><button class="btn ghost icon" onclick="$('cfg').close()" aria-label="Cerrar"><i data-i="x"></i></button></div>
+ <div class="db">
+  <section>
+   <h3>Lugar de salida</h3>
+   <p class="help">Desde acá se arma la ruta: primero va al vendedor más cercano, después al más cercano de ese, y así.</p>
+   <label class="opt"><input type="radio" name="origen" value="dir"><span><b>Desde una dirección fija</b><small>Siempre sale del lugar que pongas abajo.</small></span></label>
+   <label class="opt"><input type="radio" name="origen" value="gps"><span><b>Desde donde estoy ahora (GPS)</b><small>Sale de tu ubicación en el momento de armar la ruta. Si no hay GPS, usa la dirección de abajo.</small></span></label>
+   <div class="stack" style="margin-top:6px">
+    <label class="field"><span>Dirección de salida</span><input id="cfgDir" placeholder="Calle y número"></label>
+    <label class="field"><span>Localidad</span><select id="cfgLoc"></select></label>
+    <button class="btn ghost sm" onclick="fijarAca()"><i data-i="crosshair"></i>Usar el lugar donde estoy parado ahora</button>
+   </div>
+   <div class="ok-line" id="cfgUbic"></div>
+  </section>
+  <section>
+   <h3>Modo automático</h3>
+   <p class="help">A cuántos metros del vendedor se marca como retirado solo.</p>
+   <label class="field"><span>Distancia (metros)</span><input id="cfgRadio" type="number" inputmode="numeric" min="10" max="500"></label>
+  </section>
+  <section>
+   <h3>Logo del acceso directo</h3>
+   <p class="help">Es el ícono que aparece en la pantalla del celular. Después de cambiarlo, borrá el acceso directo viejo y volvé a crearlo (Safari: Compartir → Agregar a inicio).</p>
+   <div class="logo-row">
+    <img id="cfgLogo" src="icons/icon-192.png" alt="Logo">
+    <div class="stack" style="flex:1">
+     <label class="btn ghost sm" style="cursor:pointer"><i data-i="image"></i>Elegir una imagen<input type="file" accept="image/*" style="display:none" onchange="elegirLogo(this)"></label>
+     <button class="btn ghost sm" onclick="logoOriginal()">Usar el logo original</button>
+    </div>
+   </div>
+  </section>
+  <section>
+   <h3>Sin internet</h3>
+   <p class="help">Podés cargar vendedores, armar la ruta y marcar retirados sin señal. Los cambios quedan guardados en el celular y se suben solos cuando vuelve internet. El mapa muestra las zonas que ya viste con internet.</p>
+   <div class="ok-line" id="cfgCola"></div>
+   <button class="btn ghost sm" style="margin-top:10px" onclick="sincronizar(true)"><i data-i="refresh"></i>Subir cambios ahora</button>
+  </section>
+ </div>
+ <div class="df"><button class="btn ghost" onclick="$('cfg').close()">Cancelar</button><button class="btn" id="btnCfg" onclick="guardarConfig()"><i data-i="check"></i>Guardar</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-13-b";
+var VERSION="2026-11-23-a";
 window.actualizar = function(){
-  try{ if ("caches" in window) caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); }); }catch(e){}
-  location.href = location.pathname + "?v=" + Date.now();
+  if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
+  var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
+  try{
+    if ("caches" in window) caches.keys().then(function(k){
+      return Promise.all(k.filter(function(n){ return n.indexOf("app") >= 0; }).map(function(n){ return caches.delete(n); }));
+    }).then(ir, ir);
+    else ir();
+  }catch(e){ ir(); }
 };
 (function(){
   try{
+    if (!navigator.onLine) return;
     fetch(location.pathname, {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(t){
       var m = t.match(/var VERSION="(\d{4}-\d{2}-\d{2}-[a-z0-9]+)"/);
       if (m && m[1] !== VERSION && !sessionStorage.getItem("actualizado")){
@@ -88,6 +304,7 @@ window.actualizar = function(){
       }
     }).catch(function(){});
   }catch(e){}
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function(){});
 })();
 </script>
 <script>
@@ -104,7 +321,7 @@ document.addEventListener("keydown", function(e){
     var sig = lista[i+1]; sig.focus();
     if (sig.tagName === "INPUT" && sig.select) sig.select();
   } else {
-    document.querySelector('button[onclick="guardar()"]').focus();
+    document.getElementById("btnGuardar").focus();
   }
 }, true);
 </script>
@@ -114,23 +331,89 @@ document.addEventListener("keydown", function(e){
 <script>
 const SUPABASE_URL = "https://zwzptyzkugdtldfkzmmf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JWE3oSv4MyFp2zmPRBV1Hg_w4-FWvJZ";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const PRECIOS = {"10 pesos":46,"2 pesos":37,"1 peso":33,"50 centavos":30,"25 centavos":28,"25 plateada":6,"Llaves":80};
-const RADIO = 50; // metros para marcar llegada
-let vendedores = [], mapa=null, mYo=null, mDest=null, linea=null, miPos=null, rutaKey="", procesando=new Set();
+const LOCALIDADES = ["Andino","Aldao","Puerto General San Martín","Timbúes","San Lorenzo","Beltrán","Bermúdez","Baigorria","Cañada de Gómez","Totora","Luis Palacios","Maciel","La Ribera","Rosario"];
+const GPS_FIJO = "Punto marcado con GPS";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pesos = n => "$" + n.toLocaleString("es-AR");
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+// ---------- Guardado en el celular ----------
+const LS = {
+  get(k,d){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+let vendedores = LS.get("vendedores", []);   // copia local (sirve sin internet)
+let cola = LS.get("cola", []);               // cambios que falta subir
+let cfg = Object.assign({origen:"dir", dir:"Urquiza 354", loc:"Andino", coord:null, radio:50, logo:null}, LS.get("config", {}));
+if (!cfg.coord && cfg.dir==="Urquiza 354" && cfg.loc==="Andino") cfg.coord = LS.get("casa", null);
+function guardarLocal(){ LS.set("vendedores", vendedores); LS.set("cola", cola); }
+
+let mapa=null, capa=null, mYo=null, linea=null, miPos=null, rutaKey="", procesando=new Set(), sincronizando=false, cfgTemp=null;
+
+// ---------- Íconos ----------
+const ICONOS = {
+  refresh:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  route:'<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-8a3.5 3.5 0 0 1 0-7H12"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  nav:'<path d="M3 11 22 2l-9 19-2-8-8-2z"/>',
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  wifi:'<path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0M12 20h.01"/>',
+  wifioff:'<path d="M2 2l20 20M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5.2-2.8M19 13a10 10 0 0 0-2.3-1.6M2 8.8a15 15 0 0 1 4.2-2.6M22 8.8A15 15 0 0 0 11 5M12 20h.01"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>',
+  crosshair:'<circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  userplus:'<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M19 8v6M22 11h-6"/>',
+  upload:'<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>'
+};
+const ico = n => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n]||""}</svg>`;
+document.querySelectorAll("[data-i]").forEach(el => el.outerHTML = ico(el.dataset.i));
+
+const opcionesLoc = LOCALIDADES.map(l => `<option>${l}</option>`).join("");
+$("localidad").innerHTML = opcionesLoc; $("cfgLoc").innerHTML = opcionesLoc;
+
+function toast(msg, tipo){
+  const t = $("toast"); t.textContent = msg; t.className = "toast show " + (tipo||"");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.className = "toast", 3500);
+}
+const estado = msg => $("estado").textContent = msg || "";
 
 // ---------- Campos de monedas y total ----------
-for (const k in PRECIOS) $("coins").innerHTML += `<div><label>${k} (x $${PRECIOS[k]})</label><input type="number" inputmode="numeric" min="0" placeholder="0" data-m="${k}" oninput="calc()" onfocus="this.select()"></div>`;
-function calc(){
-  let t=0; document.querySelectorAll("[data-m]").forEach(i => t += (+i.value||0)*PRECIOS[i.dataset.m]);
-  $("totalForm").textContent = "Total a pagar: " + pesos(t);
-}
+$("coins").innerHTML = Object.keys(PRECIOS).map(k => `
+  <div class="coin">
+   <div class="name">${k}</div><div class="price">$${PRECIOS[k]} c/u</div>
+   <div class="stepper">
+    <button type="button" tabindex="-1" onclick="paso('${k}',-1)" aria-label="Uno menos">${ico("minus")}</button>
+    <input type="number" inputmode="numeric" min="0" placeholder="0" data-m="${k}" oninput="calc()" onfocus="this.select()">
+    <button type="button" tabindex="-1" onclick="paso('${k}',1)" aria-label="Uno más">${ico("plus")}</button>
+   </div>
+  </div>`).join("");
+window.paso = (k, d) => { const c = document.querySelector(`[data-m="${k}"]`); c.value = Math.max(0, (+c.value||0) + d) || ""; calc(); };
+window.calc = () => {
+  let t = 0;
+  document.querySelectorAll("[data-m]").forEach(i => {
+    const n = +i.value||0; t += n*PRECIOS[i.dataset.m];
+    i.closest(".coin").classList.toggle("has", n > 0);
+  });
+  $("totalForm").textContent = pesos(t);
+};
 function totalDe(v){ let t=0; for (const k in PRECIOS) t += (v.monedas?.[k]||0)*PRECIOS[k]; return t; }
+
+// Fecha y hora vacías se ven en gris
+["dia","hora"].forEach(id => { const el=$(id); const f=()=>el.classList.toggle("vacio", !el.value); el.addEventListener("input", f); el.addEventListener("change", f); f(); });
 
 // ---------- Dictado por voz ----------
 const UNI={cero:0,un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiun:21,veintiuno:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500};
@@ -151,9 +434,9 @@ window.dictar = () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return alert("Este navegador no permite dictado. Usá Safari.");
   const rec = new SR(); rec.lang = "es-AR"; rec.interimResults = false;
-  const btn = $("btnVoz"); btn.textContent = "Escuchando... hablá ahora";
+  const txtBtn = $("btnVoz").querySelector("span"); txtBtn.textContent = "Escuchando... hablá ahora";
   rec.onresult = e => {
-    const txt = e.results[0][0].transcript.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    const txt = e.results[0][0].transcript.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
     $("vozTexto").textContent = "Escuché: " + txt;
     const tk = txt.replace(/[,.;]/g," , ").split(/\s+/).filter(Boolean);
     let q = [];
@@ -170,13 +453,14 @@ window.dictar = () => {
     }
     calc();
   };
-  rec.onend = () => btn.textContent = "Dictar monedas con la voz";
+  rec.onend = () => txtBtn.textContent = "Dictar monedas con la voz";
   rec.onerror = () => alert("No pude escuchar. Revisá el permiso del micrófono.");
   rec.start();
 };
 
-// ---------- Direcciones en el mapa ----------
+// ---------- Direcciones y distancias ----------
 async function geocodificar(dir, loc){
+  if (!navigator.onLine) return null;
   try{
     const q = encodeURIComponent(`${dir}, ${loc||"Andino"}, Santa Fe, Argentina`);
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${q}`);
@@ -184,59 +468,181 @@ async function geocodificar(dir, loc){
     return j[0] ? {lat:+j[0].lat, lon:+j[0].lon} : null;
   }catch(e){ return null; }
 }
-async function casa(){
-  try{ const c = JSON.parse(localStorage.getItem("casa")); if (c) return c; }catch(e){}
-  const c = await geocodificar("Urquiza 354","Andino");
-  if (c) try{ localStorage.setItem("casa", JSON.stringify(c)); }catch(e){}
-  return c;
-}
 const metros = (a,b) => { const R=6371000, r=x=>x*Math.PI/180, dl=r(b.lat-a.lat), dn=r(b.lon-a.lon);
   const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
+const posActual = () => new Promise(res => {
+  if (!navigator.geolocation) return res(null);
+  navigator.geolocation.getCurrentPosition(p => res({lat:p.coords.latitude, lon:p.coords.longitude}), () => res(null),
+    {enableHighAccuracy:true, timeout:12000, maximumAge:30000});
+});
+async function origen(){
+  if (cfg.origen==="gps"){
+    const p = miPos || await posActual();
+    if (p) return p;
+    toast("Sin GPS: uso la dirección de salida guardada");
+  }
+  if (cfg.coord) return cfg.coord;
+  const c = await geocodificar(cfg.dir, cfg.loc);
+  if (c){ cfg.coord = c; LS.set("config", cfg); }
+  return c;
+}
+const nombreOrigen = () => cfg.origen==="gps" ? "Donde estoy (GPS)" : (cfg.dir===GPS_FIJO ? cfg.dir : `${cfg.dir}, ${cfg.loc}`);
+
+// ---------- Sincronización con internet ----------
+const esTmp = id => String(id).startsWith("tmp-");
+const porId = id => vendedores.find(x => String(x.id)===String(id));
+const esErrorRed = e => !navigator.onLine || /fetch|network|load failed|timeout|conexi/i.test(e?.message||"");
+
+function cambiarLocal(id, datos){
+  const v = porId(id); if (v) Object.assign(v, datos);
+  cola.push({t:"upd", id: v ? v.id : id, datos});
+}
+function hecho(){ guardarLocal(); render(); sincronizar(); }
+
+window.sincronizar = async (manual) => {
+  if (manual && !navigator.onLine) toast("Estás sin internet. Se sube cuando vuelva la conexión.", "err");
+  if (sincronizando || !sb || !navigator.onLine){ pintarRed(); return; }
+  sincronizando = true; pintarRed();
+  try{
+    while (cola.length){
+      const op = cola[0]; let error = null;
+      if (op.t==="ins"){
+        const datos = {...op.datos};
+        if (!datos.coord) datos.coord = await geocodificar(datos.direccion, datos.localidad);
+        const r = await sb.from("vendedores").insert(datos).select("id").single();
+        error = r.error;
+        if (!error){
+          const nuevo = r.data.id, v = porId(op.id);
+          if (v){ v.id = nuevo; v.coord = datos.coord; }
+          cola.forEach(o => { if (o.id===op.id) o.id = nuevo; if (o.ids) o.ids = o.ids.map(i => i===op.id ? nuevo : i); });
+          if (!datos.coord) toast(`No pude ubicar en el mapa la dirección de ${datos.nombre}. Revisala.`, "err");
+        }
+      } else if (op.t==="upd"){
+        if (!esTmp(op.id)) error = (await sb.from("vendedores").update(op.datos).eq("id", op.id)).error;
+      } else if (op.t==="del"){
+        const ids = op.ids.filter(i => !esTmp(i));
+        if (ids.length) error = (await sb.from("vendedores").delete().in("id", ids)).error;
+      }
+      if (error){
+        if (esErrorRed(error)) break;
+        toast("No se pudo subir un cambio: " + error.message, "err");
+      }
+      cola.shift(); guardarLocal();
+    }
+    if (!cola.length) await traer();
+    else if (manual) toast("No hay buena señal. Se reintenta solo.", "err");
+  } finally { sincronizando = false; render(); }
+  if (manual && !cola.length) toast("Todo subido");
+};
+async function traer(){
+  if (!sb || !navigator.onLine) return;
+  try{
+    const { data, error } = await sb.from("vendedores").select("*");
+    if (error){ if (!esErrorRed(error)) estado("Error de conexión: " + error.message); return; }
+    if (cola.length) return;           // hubo cambios mientras bajaba: primero se suben
+    // los que se cargaron sin internet y todavía no subieron, se mantienen
+    vendedores = (data||[]).concat(vendedores.filter(v => esTmp(v.id)));
+    guardarLocal(); render();
+  }catch(e){}
+}
+window.addEventListener("online", () => { pintarRed(); toast("Volvió internet, subiendo cambios..."); sincronizar(); });
+window.addEventListener("offline", () => { pintarRed(); toast("Sin internet: seguís trabajando y se sube después"); });
+function pintarRed(){
+  const r = $("red"), n = cola.length;
+  if (!navigator.onLine){ r.className = "pill off"; r.innerHTML = ico("wifioff") + (n ? `${n} sin subir` : "Sin internet"); }
+  else if (n || sincronizando){ r.className = "pill sync"; r.innerHTML = ico("upload") + (n ? `Subiendo ${n}` : "Sincronizando"); }
+  else { r.className = "pill"; r.innerHTML = ico("wifi") + "En línea"; }
+  if ($("cfgCola")) $("cfgCola").innerHTML = n ? `${ico("upload")} Hay ${n} cambio${n>1?"s":""} esperando para subir.` : `${ico("check")} Todo está subido.`;
+}
 
 // ---------- Guardar, ruta, borrar ----------
-window.guardar = async () => {
+window.guardar = () => {
   const nombre=$("nombre").value.trim(), direccion=$("direccion").value.trim();
-  if (!nombre || !direccion) return alert("Falta nombre o dirección");
+  if (!nombre || !direccion) return toast("Falta nombre o dirección", "err");
   const monedas={}; document.querySelectorAll("[data-m]").forEach(i => monedas[i.dataset.m]=+i.value||0);
-  const loc=$("localidad").value, coord=await geocodificar(direccion, loc);
-  const { error } = await sb.from("vendedores").insert({
-    nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:loc,
-    dia:$("dia").value, hora:$("hora").value, monedas, coord, orden:999, retirado:false });
-  if (error) return alert("No se pudo guardar: " + error.message);
-  ["nombre","apellido","telefono","direccion","dia","hora"].forEach(id => $(id).value="");
+  const datos = { nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:$("localidad").value,
+    dia:$("dia").value, hora:$("hora").value, monedas, coord:null, orden:999, retirado:false };
+  const id = "tmp-" + Date.now() + Math.random().toString(36).slice(2,7);
+  vendedores.push({...datos, id});
+  cola.push({t:"ins", id, datos});
+  ["nombre","apellido","telefono","direccion","dia","hora"].forEach(i => { $(i).value=""; $(i).classList.remove("has"); });
+  $("dia").classList.add("vacio"); $("hora").classList.add("vacio");
   document.querySelectorAll("[data-m]").forEach(i => i.value=""); calc(); $("vozTexto").textContent="";
-  if (!coord) alert("No pude ubicar esa dirección en el mapa. Revisala.");
-  cargar();
+  toast(navigator.onLine ? "Vendedor guardado" : "Guardado en el celular. Se sube cuando vuelva internet.");
+  hecho();
 };
 window.armarRuta = async () => {
-  $("estado").textContent = "Armando ruta...";
-  const inicio = await casa(); if (!inicio){ $("estado").textContent=""; return alert("No pude ubicar tu casa"); }
-  let pend = vendedores.filter(v => !v.retirado && v.coord), actual = inicio, n = 1, ups = [];
+  estado("Armando ruta...");
+  if (navigator.onLine){
+    const faltan = vendedores.filter(v => !v.retirado && !v.coord && !esTmp(v.id));
+    for (const v of faltan){
+      estado(`Ubicando ${v.nombre} en el mapa...`);
+      const c = await geocodificar(v.direccion, v.localidad); if (c) cambiarLocal(v.id, {coord:c});
+      await espera(1100);
+    }
+  }
+  estado("Buscando el lugar de salida...");
+  const inicio = await origen();
+  if (!inicio){ estado(""); return toast("No sé desde dónde salir. Elegí el lugar de salida en Configuración.", "err"); }
+  let pend = vendedores.filter(v => !v.retirado && v.coord), actual = inicio, n = 1;
+  vendedores.filter(v => !v.retirado && !v.coord && v.orden!==999).forEach(v => cambiarLocal(v.id, {orden:999}));
+  const sinUb = vendedores.filter(v => !v.retirado && !v.coord).length;
   while (pend.length){
     pend.sort((a,b) => metros(actual,a.coord)-metros(actual,b.coord));
-    const p = pend.shift(); ups.push(sb.from("vendedores").update({orden:n++}).eq("id",p.id)); actual = p.coord;
+    const p = pend.shift(); if (p.orden!==n) cambiarLocal(p.id, {orden:n}); n++; actual = p.coord;
   }
-  await Promise.all(ups); rutaKey=""; $("estado").textContent = "Ruta lista"; cargar();
+  rutaKey=""; hecho();
+  estado(`Ruta lista: ${n-1} paradas saliendo de ${nombreOrigen()}.` + (sinUb ? ` ${sinUb} sin ubicación en el mapa.` : ""));
 };
-window.limpiarRetirados = async () => {
+window.limpiarRetirados = () => {
   const ids = vendedores.filter(v => v.retirado).map(v => v.id);
-  if (!ids.length) return alert("No hay vendedores retirados");
+  if (!ids.length) return toast("No hay vendedores retirados");
   if (!confirm(`¿Borrar ${ids.length} vendedores ya retirados?`)) return;
-  await sb.from("vendedores").delete().in("id", ids); cargar();
+  vendedores = vendedores.filter(v => !v.retirado);
+  cola.push({t:"del", ids}); hecho();
 };
-window.cambiar = async (id,campo,valor) => { await sb.from("vendedores").update({[campo]:valor}).eq("id",id); cargar(); };
-window.borrar = async id => { if (confirm("¿Borrar este vendedor?")){ await sb.from("vendedores").delete().eq("id",id); cargar(); } };
+window.cambiar = (id,campo,valor) => { cambiarLocal(id, {[campo]:valor}); hecho(); };
+window.borrar = id => {
+  const v = porId(id); if (!v || !confirm(`¿Borrar a ${v.nombre} ${v.apellido||""}?`)) return;
+  vendedores = vendedores.filter(x => x!==v);
+  cola.push({t:"del", ids:[v.id]}); hecho();
+};
+window.reubicar = async id => {
+  const v = porId(id); if (!v) return;
+  if (!navigator.onLine) return toast("Para buscar la dirección hace falta internet", "err");
+  toast("Buscando la dirección...");
+  const c = await geocodificar(v.direccion, v.localidad);
+  if (!c) return toast("No encontré esa dirección. Revisá que esté bien escrita.", "err");
+  cambiarLocal(v.id, {coord:c}); hecho(); toast("Ubicado en el mapa");
+};
 window.ir = id => {
-  const v = vendedores.find(x => x.id===id); if (!v) return;
-  const d = encodeURIComponent(`${v.direccion}, ${v.localidad||"Andino"}, Santa Fe, Argentina`);
+  const v = porId(id); if (!v) return;
+  const d = v.coord && !v.direccion ? `${v.coord.lat},${v.coord.lon}` : encodeURIComponent(`${v.direccion}, ${v.localidad||"Andino"}, Santa Fe, Argentina`);
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${d}&travelmode=driving`, "_blank");
 };
-window.retirarYSeguir = async id => {
-  if (procesando.has(id)) return; procesando.add(id);
-  await sb.from("vendedores").update({retirado:true}).eq("id",id);
-  rutaKey=""; await cargar();
-  if (!proxima()) alert("No quedan más paradas en la ruta");
+window.retirarYSeguir = id => {
+  const v = porId(id); if (!v || procesando.has(String(v.id))) return;
+  procesando.add(String(v.id));
+  cambiarLocal(v.id, {retirado:true}); rutaKey=""; hecho();
+  setTimeout(() => procesando.delete(String(v.id)), 5000);
+  const p = proxima();
+  toast(p ? `Listo. Próxima: ${p.nombre}` : "No quedan más paradas en la ruta");
 };
+
+// ---------- Fecha y hora ----------
+function fechaTxt(dia){
+  const d = new Date(dia + "T00:00:00"); if (isNaN(d)) return dia;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dif = Math.round((d - hoy) / 864e5);
+  const base = d.toLocaleDateString("es-AR", {weekday:"long", day:"numeric", month:"numeric"});
+  return dif===0 ? "Hoy, " + base : dif===1 ? "Mañana, " + base : dif===-1 ? "Ayer, " + base : base;
+}
+function cuando(v){
+  const p = [];
+  if (v.dia) p.push(fechaTxt(v.dia));
+  if (v.hora) p.push(String(v.hora).slice(0,5) + " hs");
+  return p.join(" · ");
+}
 
 // ---------- Próxima parada y mapa ----------
 const proxima = () => vendedores.filter(v => !v.retirado && v.orden<999 && v.coord).sort((a,b)=>a.orden-b.orden)[0];
@@ -244,30 +650,57 @@ function dibujarProxima(){
   const c=$("proxima"), p=proxima();
   if (!p){ c.style.display="none"; return; }
   c.style.display="block";
-  const d = miPos ? ` - a ${Math.round(metros(miPos,p.coord))} m` : "";
-  c.innerHTML = `<h3>Próxima parada${d}</h3><b>${esc(p.nombre)} ${esc(p.apellido)}</b><br><small>${esc(p.direccion)}, ${esc(p.localidad)}</small>
-   <p class="total">Pagar: ${pesos(totalDe(p))}</p>
-   <button onclick="ir('${p.id}')">Ir con Google Maps</button>
-   <button class="ok" onclick="retirarYSeguir('${p.id}')">Retirado, ir al siguiente</button>`;
+  const d = miPos ? (m => m<1000 ? `a ${Math.round(m)} m` : `a ${(m/1000).toFixed(1).replace(".",",")} km`)(metros(miPos,p.coord)) : "";
+  const w = cuando(p);
+  c.innerHTML = `<div class="top"><span class="tag">Próxima parada · #${p.orden}</span><b>${d}</b></div>
+   <div class="nm">${esc(p.nombre)} ${esc(p.apellido)}</div>
+   <div class="ln">${ico("pin")}<span>${esc(p.direccion)}, ${esc(p.localidad)}</span></div>
+   ${w ? `<div class="ln">${ico("calendar")}<span>${esc(w)}</span></div>` : ""}
+   <div class="pay"><span>Pagar</span><b>${pesos(totalDe(p))}</b></div>
+   <div class="stack">
+    <div class="grid2">
+     <button class="btn light" onclick="ir('${esc(p.id)}')">${ico("nav")}Google Maps</button>
+     ${p.telefono ? `<a class="btn light" href="tel:${esc(p.telefono)}">${ico("phone")}Llamar</a>` : `<button class="btn light" disabled>${ico("phone")}Sin teléfono</button>`}
+    </div>
+    <button class="btn go" onclick="retirarYSeguir('${esc(p.id)}')">${ico("check")}Retirado, ir al siguiente</button>
+   </div>`;
 }
+const marca = (cls, html, size) => L.divIcon({className:"", html:`<div class="mk ${cls}">${html}</div>`, iconSize:[size,size], iconAnchor:[size/2,size/2]});
 async function dibujarMapa(){
-  if (!mapa){ mapa = L.map("mapa").setView([-32.7,-60.7],11); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"OpenStreetMap"}).addTo(mapa); }
-  if (miPos){ if(!mYo) mYo=L.circleMarker([miPos.lat,miPos.lon],{radius:8,color:"#2563eb"}).addTo(mapa); else mYo.setLatLng([miPos.lat,miPos.lon]); }
-  const p = proxima();
-  if (mDest){ mapa.removeLayer(mDest); mDest=null; }
-  if (!p){ if(linea){ mapa.removeLayer(linea); linea=null; } return; }
-  mDest = L.marker([p.coord.lat,p.coord.lon]).addTo(mapa).bindPopup(esc(p.nombre)+" "+esc(p.apellido));
-  const key = p.id + (miPos?"gps":"");
-  if (miPos && rutaKey!==key){
-    rutaKey = key;
-    let pts=[[miPos.lat,miPos.lon],[p.coord.lat,p.coord.lon]];
-    try{
+  if (!window.L) return;
+  if (!mapa){
+    mapa = L.map("mapa", {zoomControl:true}).setView([-32.67,-60.87], 11);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, crossOrigin:"anonymous", attribution:"© OpenStreetMap"}).addTo(mapa);
+    capa = L.layerGroup().addTo(mapa);
+  }
+  capa.clearLayers();
+  if (cfg.coord) L.marker([cfg.coord.lat,cfg.coord.lon], {icon:marca("home", ico("home"), 28), zIndexOffset:-100}).bindPopup("Salida").addTo(capa);
+  const ruta = vendedores.filter(v => !v.retirado && v.coord && v.orden<999).sort((a,b)=>a.orden-b.orden);
+  const p = ruta[0];
+  ruta.forEach(v => L.marker([v.coord.lat,v.coord.lon], {icon: v===p ? marca("next", v.orden, 34) : marca("", v.orden, 28), zIndexOffset: v===p ? 1000 : 0})
+    .bindPopup(`<b>${esc(v.nombre)} ${esc(v.apellido)}</b><br>${esc(v.direccion)}<br>${pesos(totalDe(v))}`).addTo(capa));
+  if (miPos){
+    const ll = [miPos.lat, miPos.lon];
+    if (!mYo) mYo = L.marker(ll, {icon:L.divIcon({className:"", html:'<div class="yo"></div>', iconSize:[18,18], iconAnchor:[9,9]}), zIndexOffset:2000}).addTo(mapa);
+    else mYo.setLatLng(ll);
+  }
+  if (!p){ if (linea){ mapa.removeLayer(linea); linea=null; } rutaKey=""; return; }
+  const key = p.id + (miPos ? "gps" : "");
+  if (rutaKey===key) return;
+  rutaKey = key;
+  if (linea){ mapa.removeLayer(linea); linea=null; }
+  if (miPos){
+    let pts = [[miPos.lat,miPos.lon],[p.coord.lat,p.coord.lon]];
+    if (navigator.onLine) try{
       const j = await (await fetch(`https://router.project-osrm.org/route/v1/driving/${miPos.lon},${miPos.lat};${p.coord.lon},${p.coord.lat}?overview=full&geometries=geojson`)).json();
       pts = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
     }catch(e){}
     if (linea) mapa.removeLayer(linea);
-    linea = L.polyline(pts,{color:"#047857",weight:5}).addTo(mapa);
-    mapa.fitBounds(linea.getBounds(),{padding:[20,20]});
+    linea = L.polyline(pts, {color:"#0f766e", weight:5, opacity:.85}).addTo(mapa);
+    mapa.fitBounds(linea.getBounds(), {padding:[24,24]});
+  } else {
+    const pts = ruta.map(v => [v.coord.lat, v.coord.lon]); if (cfg.coord) pts.push([cfg.coord.lat, cfg.coord.lon]);
+    if (pts.length > 1) mapa.fitBounds(pts, {padding:[24,24]}); else mapa.setView(pts[0], 15);
   }
 }
 
@@ -275,47 +708,129 @@ async function dibujarMapa(){
 window.cambiarModo = () => {
   const a = $("modoAuto").checked;
   try{ localStorage.setItem("modoAuto", a?"1":"0"); }catch(e){}
-  $("modoEstado").textContent = a ? "Automático: al llegar a unos 50 m se marca retirado y pasa a la siguiente. Dejá la pantalla prendida." : "Manual: vos tocás Retirado.";
+  $("modoEstado").textContent = a ? `Al llegar a ${cfg.radio} m se marca retirado y pasa al siguiente. Dejá la pantalla prendida.` : "Manual: vos tocás \"Retirado\".";
 };
 try{ $("modoAuto").checked = localStorage.getItem("modoAuto")==="1"; }catch(e){}
 cambiarModo();
 if (navigator.geolocation) navigator.geolocation.watchPosition(pos => {
   miPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
   const p = proxima(); dibujarProxima(); dibujarMapa();
-  if (p && $("modoAuto").checked && metros(miPos,p.coord)<=RADIO) retirarYSeguir(p.id);
+  if (p && $("modoAuto").checked && metros(miPos,p.coord) <= (cfg.radio||50)) retirarYSeguir(p.id);
 }, () => { $("modoEstado").textContent += " (Sin GPS: revisá el permiso de ubicación)"; }, {enableHighAccuracy:true, maximumAge:5000});
 
 // ---------- Lista de vendedores ----------
 function dibujarLista(){
   vendedores.sort((a,b) => (a.retirado-b.retirado) || (a.orden-b.orden) || (a.dia||"").localeCompare(b.dia||""));
-  let gran=0;
-  $("lista").innerHTML = vendedores.map(v => {
-    const t=totalDe(v); if(!v.retirado) gran+=t;
-    const det = Object.entries(v.monedas||{}).filter(([,c])=>c>0).map(([k,c])=>`${c} de ${k}`).join(", ");
-    return `<div class="card stop" style="${v.retirado?"opacity:.5":""}">
-     <b>${v.orden<999?`<span class="num">${v.orden}</span>`:""}${esc(v.nombre)} ${esc(v.apellido)}</b><br>
-     <small>${esc(v.direccion)}, ${esc(v.localidad)} - <a href="tel:${esc(v.telefono)}">${esc(v.telefono)}</a></small><br>
-     <small>${esc(det)||"Sin monedas"}</small>
-     <p class="total">Pagar: ${pesos(t)}</p>
-     <div class="grid">
-      <input type="date" value="${esc(v.dia)}" onchange="cambiar('${v.id}','dia',this.value)">
-      <input type="time" value="${esc(v.hora)}" onchange="cambiar('${v.id}','hora',this.value)">
+  let gran = 0, pend = 0;
+  const html = vendedores.map(v => {
+    const t = totalDe(v), id = esc(v.id); if (!v.retirado){ gran += t; pend++; }
+    const monedas = Object.entries(v.monedas||{}).filter(([,c])=>c>0).map(([k,c])=>`<span class="chip coin">${c} × ${esc(k)}</span>`).join("");
+    const chips = [
+      v.retirado ? `<span class="chip done">Retirado</span>` : "",
+      esTmp(v.id) ? `<span class="chip up">Sin subir</span>` : "",
+      !v.coord && !esTmp(v.id) ? `<span class="chip warn">Sin ubicación en el mapa</span>` : ""
+    ].join("");
+    return `<div class="card vend ${v.retirado?"done":""}">
+     <div class="vh">
+      ${v.orden<999 && !v.retirado ? `<span class="num">${v.orden}</span>` : ""}
+      <div class="vname"><b>${esc(v.nombre)} ${esc(v.apellido)}</b>${chips ? `<div class="chips">${chips}</div>` : ""}</div>
+      <div class="vtot">${pesos(t)}</div>
      </div>
-     <button onclick="ir('${v.id}')">Ir con Google Maps</button>
-     <div class="grid">
-      ${v.retirado ? `<button class="sec" onclick="cambiar('${v.id}','retirado',false)">Marcar pendiente</button>` : `<button class="sec" onclick="retirarYSeguir('${v.id}')">Retirado, ir al siguiente</button>`}
-      <button class="del" onclick="borrar('${v.id}')">Borrar</button>
-     </div></div>`;
-  }).join("") + `<div class="card"><b>Total pendiente a pagar: ${pesos(gran)}</b></div>`;
+     <div class="meta">${ico("pin")}<span>${esc(v.direccion)}, ${esc(v.localidad)}</span></div>
+     ${v.telefono ? `<div class="meta">${ico("phone")}<a href="tel:${esc(v.telefono)}">${esc(v.telefono)}</a></div>` : ""}
+     <div class="chips" style="margin-top:10px">${monedas || `<span class="chip">Sin monedas cargadas</span>`}</div>
+     <div class="grid2 when">
+      <label class="field"><span>${ico("calendar")}Día de retiro</span><input type="date" class="${v.dia?"":"vacio"}" value="${esc(v.dia)}" onchange="cambiar('${id}','dia',this.value)"></label>
+      <label class="field"><span>${ico("clock")}Hora</span><input type="time" class="${v.hora?"":"vacio"}" value="${esc(v.hora ? String(v.hora).slice(0,5) : "")}" onchange="cambiar('${id}','hora',this.value)"></label>
+     </div>
+     <small style="display:block;margin-top:6px">${v.dia||v.hora ? esc(cuando(v)) : "Todavía no tiene día ni hora de retiro."}</small>
+     <div class="acts">
+      <button class="btn ghost sm" onclick="ir('${id}')">${ico("nav")}Maps</button>
+      ${v.retirado ? `<button class="btn ghost sm" onclick="cambiar('${id}','retirado',false)">${ico("undo")}Pendiente</button>`
+                   : `<button class="btn sm" onclick="retirarYSeguir('${id}')">${ico("check")}Retirado</button>`}
+      <button class="btn danger sm icon" onclick="borrar('${id}')" aria-label="Borrar">${ico("trash")}</button>
+     </div>
+     ${!v.coord && !esTmp(v.id) ? `<button class="btn ghost sm" style="margin-top:8px" onclick="reubicar('${id}')">${ico("crosshair")}Buscar de nuevo en el mapa</button>` : ""}
+    </div>`;
+  }).join("");
+  $("lista").innerHTML = html || `<div class="card vacia">Todavía no cargaste vendedores.</div>`;
+  $("stPend").textContent = pend;
+  $("stTotal").textContent = pesos(gran);
+  $("stOrigen").textContent = nombreOrigen();
+  $("cuenta").textContent = vendedores.length ? `${pend} por retirar de ${vendedores.length}` : "";
 }
-async function cargar(){
-  const { data, error } = await sb.from("vendedores").select("*");
-  if (error){ $("estado").textContent = "Error de conexión: " + error.message; return; }
-  vendedores = data || []; dibujarLista(); dibujarProxima(); dibujarMapa();
-}
-sb.channel("vendedores-cambios").on("postgres_changes",{event:"*",schema:"public",table:"vendedores"}, cargar).subscribe();
-cargar();
+function render(){ dibujarLista(); dibujarProxima(); dibujarMapa(); pintarRed(); }
 
+// ---------- Configuración ----------
+function aplicarLogo(){
+  $("appleIcon").href = cfg.logo || "icons/apple-touch-icon.png";
+  $("favicon").href = cfg.logo || "icons/favicon-64.png";
+  $("logoTop").src = cfg.logo || "icons/icon-192.png";
+}
+function pintarUbicCfg(){
+  $("cfgUbic").innerHTML = cfgTemp.coord ? `${ico("check")} Lugar de salida ubicado en el mapa.` : `${ico("pin")} Se va a buscar en el mapa al guardar (hace falta internet).`;
+}
+window.abrirConfig = () => {
+  cfgTemp = {...cfg};
+  document.querySelectorAll('input[name=origen]').forEach(r => r.checked = r.value===cfg.origen);
+  $("cfgDir").value = cfg.dir; $("cfgLoc").value = cfg.loc; $("cfgRadio").value = cfg.radio;
+  $("cfgLogo").src = cfg.logo || "icons/icon-192.png";
+  pintarUbicCfg(); pintarRed();
+  $("cfg").showModal();
+};
+$("cfgDir").addEventListener("input", () => { cfgTemp.coord = null; pintarUbicCfg(); });
+$("cfgLoc").addEventListener("change", () => { if ($("cfgDir").value !== GPS_FIJO){ cfgTemp.coord = null; pintarUbicCfg(); } });
+window.fijarAca = async () => {
+  toast("Buscando tu ubicación...");
+  const p = await posActual();
+  if (!p) return toast("No pude leer el GPS. Revisá el permiso de ubicación.", "err");
+  cfgTemp.coord = p; $("cfgDir").value = GPS_FIJO;
+  document.querySelector('input[name=origen][value=dir]').checked = true;
+  pintarUbicCfg(); toast("Listo, este lugar queda como salida");
+};
+window.elegirLogo = input => {
+  const f = input.files[0]; if (!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const S = 180, c = document.createElement("canvas"); c.width = c.height = S;
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,S,S);
+    const k = Math.max(S/img.width, S/img.height), w = img.width*k, h = img.height*k;
+    x.drawImage(img, (S-w)/2, (S-h)/2, w, h);
+    cfgTemp.logo = c.toDataURL("image/png"); $("cfgLogo").src = cfgTemp.logo;
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = () => toast("No pude abrir esa imagen", "err");
+  img.src = url; input.value = "";
+};
+window.logoOriginal = () => { cfgTemp.logo = null; $("cfgLogo").src = "icons/icon-192.png"; };
+window.guardarConfig = async () => {
+  const btn = $("btnCfg");
+  cfgTemp.origen = document.querySelector('input[name=origen]:checked')?.value || "dir";
+  cfgTemp.dir = $("cfgDir").value.trim() || "Urquiza 354";
+  cfgTemp.loc = $("cfgLoc").value;
+  cfgTemp.radio = Math.min(500, Math.max(10, +$("cfgRadio").value || 50));
+  if (!cfgTemp.coord && cfgTemp.dir !== GPS_FIJO){
+    btn.disabled = true;
+    const c = await geocodificar(cfgTemp.dir, cfgTemp.loc);
+    btn.disabled = false;
+    if (!c){
+      if (!navigator.onLine) toast("Sin internet no puedo buscar la dirección. Usá \"el lugar donde estoy parado\".", "err");
+      else toast("No encontré esa dirección. Revisá que esté bien escrita.", "err");
+      return;
+    }
+    cfgTemp.coord = c;
+  }
+  cfg = cfgTemp; LS.set("config", cfg);
+  aplicarLogo(); cambiarModo(); rutaKey = ""; render();
+  $("cfg").close();
+  toast("Configuración guardada. Tocá \"Armar ruta\" para recalcular.");
+};
+
+// ---------- Arranque ----------
+aplicarLogo();
+render();
+if (sb) sb.channel("vendedores-cambios").on("postgres_changes", {event:"*", schema:"public", table:"vendedores"}, () => { if (!cola.length && !sincronizando) traer(); }).subscribe();
+sincronizar();
 </script>
 </body>
 </html>
