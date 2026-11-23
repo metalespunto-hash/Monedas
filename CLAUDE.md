@@ -7,6 +7,9 @@ App web (una sola página) para cargar vendedores de monedas, armar la ruta de r
 - `sw.js`: service worker para que funcione sin internet (app, librerías y mapa ya visto).
 - `manifest.webmanifest` + `icons/`: logo del acceso directo (`icons/icon.svg` es la fuente).
 
+## Pantalla
+Tres pestañas con barra fija abajo (`tab()`): **Ruta** (próxima parada, armar ruta, mapa), **Cargar** (formulario con total y Guardar fijos abajo) y **Vendedores** (buscador, filtro Pendientes/Retirados/Todos, tarjetas compactas que se abren con la flechita).
+
 ## Cómo funciona
 - Datos en Supabase, tabla `vendedores` (nombre, apellido, telefono, direccion, localidad, dia, hora, monedas{tipo:cantidad}, coord{lat,lon}, orden, retirado). Orden 999 = fuera de ruta.
 - Copia local en `localStorage` (`vendedores`) + cola de cambios (`cola`) que se sube con `sincronizar()` cuando hay internet. Los vendedores cargados sin internet usan id `tmp-...` hasta subirse.

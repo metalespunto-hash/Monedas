@@ -47,7 +47,34 @@
  .pill.off{background:#fbbf24;color:#3b2300}
  .pill.sync{background:rgba(255,255,255,.28)}
 
- main{max-width:760px;margin:0 auto;padding:14px 14px calc(40px + env(safe-area-inset-bottom))}
+ main{max-width:760px;margin:0 auto;padding:14px 14px calc(96px + env(safe-area-inset-bottom))}
+ .tab{display:none}.tab.on{display:block}
+ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:1100;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,23,42,.08)}
+ nav.tabs button{font:inherit;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:12px;font-weight:650;position:relative;cursor:pointer;border-radius:12px}
+ nav.tabs button .i{width:24px;height:24px}
+ nav.tabs button.on{color:var(--brand-ink);background:var(--brand-soft)}
+ .badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--gold);color:#3b2300;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
+ .badge:empty{display:none}
+ .savebar{position:sticky;bottom:calc(74px + env(safe-area-inset-bottom));z-index:500;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);padding:10px 10px 10px 16px;box-shadow:0 8px 30px rgba(15,23,42,.15)}
+ .savebar div{flex:1}.savebar small{display:block;font-size:12px;font-weight:600}
+ .savebar b{font-size:24px;color:var(--ok-ink);letter-spacing:-.02em}
+ .savebar .btn{width:auto;padding:12px 22px}
+ .sub{display:flex;align-items:center;justify-content:space-between;margin:16px 0 0}
+ .sub .voz{width:auto}
+ .filtros{display:grid;gap:10px;margin-bottom:12px}
+ .seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--line);border-radius:12px;padding:3px;gap:3px}
+ .seg button{font:inherit;font-size:14px;font-weight:650;border:0;background:none;color:var(--muted);padding:9px 4px;border-radius:9px;cursor:pointer}
+ .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+ .vend{padding:12px 14px;margin-bottom:10px}
+ .vend .meta{margin-top:4px}
+ .qa{display:grid;grid-template-columns:44px 44px 44px 1fr 44px;gap:6px;margin-top:10px}
+ .qa .btn{min-height:42px;padding:0}
+ .qa .btn.txt{padding:0 10px}
+ .more{display:none;border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+ .vend.abierto .more{display:block}
+ .vend.abierto .chev svg{transform:rotate(180deg)}
  .card{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--line)}
  .card h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
  .card h2 .i{color:var(--brand-ink)}
@@ -68,6 +95,8 @@
  input::-webkit-date-and-time-value{text-align:left}
  input.vacio{color:var(--muted)}
  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+ .grid3 .btn{padding:10px 6px;gap:6px;font-size:15px}
  .stack{display:grid;gap:10px}
  @media(max-width:460px){.grid2.wrap{grid-template-columns:1fr}}
 
@@ -85,12 +114,12 @@
  .btn.wsp{background:#25d366;color:#05371a}
 
  /* Monedas */
- .coins{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:16px 0 12px}
- .coin{background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:10px 10px 10px;transition:background .15s,border-color .15s}
+ .coins{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin:10px 0 14px}
+ .coin{background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:8px;transition:background .15s,border-color .15s}
  .coin.has{border-color:var(--gold);background:var(--gold-soft)}
  .coin .name{font-weight:700;font-size:14px}
  .coin .price{font-size:12px;color:var(--muted)}
- .coin input.cant{margin-top:8px;text-align:center;font-weight:750;font-size:20px;padding:8px;background:var(--card)}
+ .coin input.cant{margin-top:6px;text-align:center;font-weight:750;font-size:19px;padding:6px;min-height:44px;background:var(--card)}
  .totalbar{display:flex;justify-content:space-between;align-items:center;background:var(--ok-soft);color:var(--ok-ink);border-radius:14px;padding:12px 16px;margin:14px 0;font-weight:650}
  .totalbar b{font-size:26px;letter-spacing:-.02em}
  .voz{display:flex;gap:10px;align-items:center}
@@ -173,7 +202,7 @@
  .logo-row{display:flex;gap:14px;align-items:center}
  .logo-row img{width:72px;height:72px;border-radius:17px;box-shadow:var(--shadow);border:1px solid var(--line);object-fit:cover;flex:none}
 
- .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f172a;color:#fff;
+ .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f172a;color:#fff;
   padding:12px 18px;border-radius:14px;font-weight:600;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.3);transition:.25s;z-index:3000;width:max-content;max-width:calc(100% - 32px);text-align:center}
  .toast.show{opacity:1;transform:translate(-50%,0)}
  .toast.err{background:#b91c1c}
@@ -189,34 +218,12 @@
 
 <main>
 
+<!-- PESTAÑA RUTA -->
+<section class="tab" id="tab-ruta">
 <div class="card next" id="proxima" style="display:none"></div>
+<div class="card vacia" id="sinRuta" style="display:none">No hay paradas en la ruta.<br><small>Tocá "Armar ruta por cercanía" para ordenar los vendedores.</small></div>
 
 <div class="card">
- <h2><i data-i="userplus"></i>Nuevo vendedor</h2>
- <div class="grid2 wrap">
-  <label class="field"><span>Nombre</span><input id="nombre" placeholder="Ej: Juan" autocomplete="off"></label>
-  <label class="field"><span>Apellido</span><input id="apellido" placeholder="Ej: Pérez" autocomplete="off"></label>
-  <label class="field"><span>Teléfono</span><input id="telefono" placeholder="Ej: 3476 123456" type="tel" autocomplete="off"></label>
-  <label class="field"><span>Dirección</span><input id="direccion" placeholder="Calle y número" autocomplete="off"></label>
- </div>
- <label class="field" style="margin-top:10px"><span>Localidad</span><select id="localidad"></select></label>
-
- <div class="coins" id="coins"></div>
-
- <button class="btn ghost" id="btnVoz" onclick="dictar()"><i data-i="mic"></i><span>Dictar monedas con la voz</span></button>
- <small id="vozTexto"></small>
-
- <div class="grid2" style="margin-top:14px">
-  <label class="field"><span><i data-i="calendar"></i>Día de retiro</span><input id="dia" type="date"></label>
-  <label class="field"><span><i data-i="clock"></i>Hora de retiro</span><input id="hora" type="time"></label>
- </div>
-
- <div class="totalbar"><span>Total a pagar</span><b id="totalForm">$0</b></div>
- <button class="btn" id="btnGuardar" onclick="guardar()"><i data-i="check"></i>Guardar vendedor</button>
-</div>
-
-<div class="card">
- <h2><i data-i="route"></i>Recorrido</h2>
  <div class="stats">
   <div class="stat"><small>Por retirar</small><b id="stPend">0</b></div>
   <div class="stat"><small>Total a pagar</small><b id="stTotal">$0</b></div>
@@ -225,13 +232,58 @@
  <button class="btn" onclick="armarRuta()"><i data-i="route"></i>Armar ruta por cercanía</button>
  <label class="switch"><input type="checkbox" id="modoAuto" onchange="cambiarModo()"><span class="tr"></span><span><b>Modo automático</b><small id="modoEstado"></small></span></label>
  <div id="mapa"></div>
- <button class="btn ghost sm" onclick="limpiarRetirados()"><i data-i="trash"></i>Borrar todos los retirados</button>
  <small id="estado"></small>
 </div>
+</section>
 
-<div class="sect"><h2>Vendedores</h2><small id="cuenta"></small></div>
+<!-- PESTAÑA CARGAR -->
+<section class="tab" id="tab-cargar">
+<div class="card">
+ <h2><i data-i="userplus"></i>Nuevo vendedor</h2>
+ <div class="grid2">
+  <label class="field"><span>Nombre</span><input id="nombre" placeholder="Juan" autocomplete="off"></label>
+  <label class="field"><span>Apellido</span><input id="apellido" placeholder="Pérez" autocomplete="off"></label>
+  <label class="field"><span>Teléfono</span><input id="telefono" placeholder="3476 123456" type="tel" autocomplete="off"></label>
+  <label class="field"><span>Localidad</span><select id="localidad"></select></label>
+ </div>
+ <label class="field" style="margin-top:10px"><span>Dirección</span><input id="direccion" placeholder="Calle y número" autocomplete="off"></label>
+
+ <div class="sub"><b>Monedas</b><button class="btn ghost sm voz" id="btnVoz" onclick="dictar()"><i data-i="mic"></i><span>Dictar</span></button></div>
+ <small id="vozTexto"></small>
+ <div class="coins" id="coins"></div>
+
+ <div class="grid2">
+  <label class="field"><span><i data-i="calendar"></i>Día de retiro</span><input id="dia" type="date"></label>
+  <label class="field"><span><i data-i="clock"></i>Hora de retiro</span><input id="hora" type="time"></label>
+ </div>
+</div>
+<div class="savebar">
+ <div><small>Total a pagar</small><b id="totalForm">$0</b></div>
+ <button class="btn" id="btnGuardar" onclick="guardar()"><i data-i="check"></i>Guardar</button>
+</div>
+</section>
+
+<!-- PESTAÑA VENDEDORES -->
+<section class="tab" id="tab-lista">
+<div class="filtros">
+ <input id="buscar" type="search" placeholder="Buscar por nombre o dirección" oninput="dibujarLista()">
+ <div class="seg" id="seg">
+  <button data-f="pend" onclick="filtrar('pend')">Pendientes</button>
+  <button data-f="ret" onclick="filtrar('ret')">Retirados</button>
+  <button data-f="todos" onclick="filtrar('todos')">Todos</button>
+ </div>
+ <small id="cuenta"></small>
+</div>
 <div id="lista"></div>
+<button class="btn ghost sm" id="btnLimpiar" onclick="limpiarRetirados()" style="display:none"><i data-i="trash"></i>Borrar todos los retirados</button>
+</section>
 </main>
+
+<nav class="tabs" id="tabs">
+ <button data-tab="ruta" onclick="tab('ruta')"><i data-i="route"></i><span>Ruta</span></button>
+ <button data-tab="cargar" onclick="tab('cargar')"><i data-i="userplus"></i><span>Cargar</span></button>
+ <button data-tab="lista" onclick="tab('lista')"><i data-i="list"></i><span>Vendedores</span><b class="badge" id="badge"></b></button>
+</nav>
 
 <!-- CONFIGURACIÓN -->
 <dialog id="cfg">
@@ -279,7 +331,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-b";
+var VERSION="2026-11-23-c";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -375,6 +427,8 @@ const ICONOS = {
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
   userplus:'<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M19 8v6M22 11h-6"/>',
   upload:'<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  chev:'<path d="m6 9 6 6 6-6"/>',
   wsp:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M9 10.5c.5 2 2.5 4 4.5 4.5l1.3-1.3 2 1-.3 1.3c-3.5.5-8-4-7.5-7.5L10.3 8l1 2z"/>'
 };
 // Link de WhatsApp. Acepta números argentinos como "3476 123456", "03476 15 123456" o "+54 9 3476 123456".
@@ -457,7 +511,7 @@ window.dictar = () => {
     }
     calc();
   };
-  rec.onend = () => txtBtn.textContent = "Dictar monedas con la voz";
+  rec.onend = () => txtBtn.textContent = "Dictar";
   rec.onerror = () => alert("No pude escuchar. Revisá el permiso del micrófono.");
   rec.start();
 };
@@ -652,6 +706,7 @@ function cuando(v){
 const proxima = () => vendedores.filter(v => !v.retirado && v.orden<999 && v.coord).sort((a,b)=>a.orden-b.orden)[0];
 function dibujarProxima(){
   const c=$("proxima"), p=proxima();
+  $("sinRuta").style.display = p ? "none" : "block";
   if (!p){ c.style.display="none"; return; }
   c.style.display="block";
   const d = miPos ? (m => m<1000 ? `a ${Math.round(m)} m` : `a ${(m/1000).toFixed(1).replace(".",",")} km`)(metros(miPos,p.coord)) : "";
@@ -662,11 +717,12 @@ function dibujarProxima(){
    ${w ? `<div class="ln">${ico("calendar")}<span>${esc(w)}</span></div>` : ""}
    <div class="pay"><span>Pagar</span><b>${pesos(totalDe(p))}</b></div>
    <div class="stack">
-    <button class="btn light" onclick="ir('${esc(p.id)}')">${ico("nav")}Ir con Google Maps</button>
-    ${p.telefono ? `<div class="grid2">
-     <a class="btn light" href="tel:${esc(p.telefono)}">${ico("phone")}Llamar</a>
-     <a class="btn wsp" href="${wspLink(p.telefono, `Hola ${p.nombre}, voy en camino a retirar las monedas.`)}" target="_blank" rel="noopener">${ico("wsp")}WhatsApp</a>
-    </div>` : `<button class="btn light" disabled>${ico("phone")}Sin teléfono</button>`}
+    <div class="grid3">
+     <button class="btn light" onclick="ir('${esc(p.id)}')">${ico("nav")}Maps</button>
+     ${p.telefono ? `<a class="btn light" href="tel:${esc(p.telefono)}">${ico("phone")}Llamar</a>
+     <a class="btn wsp" href="${wspLink(p.telefono, `Hola ${p.nombre}, voy en camino a retirar las monedas.`)}" target="_blank" rel="noopener">${ico("wsp")}WSP</a>`
+     : `<button class="btn light" disabled>${ico("phone")}—</button><button class="btn light" disabled>${ico("wsp")}—</button>`}
+    </div>
     <button class="btn go" onclick="retirarYSeguir('${esc(p.id)}')">${ico("check")}Retirado, ir al siguiente</button>
    </div>`;
 }
@@ -723,50 +779,79 @@ if (navigator.geolocation) navigator.geolocation.watchPosition(pos => {
   if (p && $("modoAuto").checked && metros(miPos,p.coord) <= (cfg.radio||50)) retirarYSeguir(p.id);
 }, () => { $("modoEstado").textContent += " (Sin GPS: revisá el permiso de ubicación)"; }, {enableHighAccuracy:true, maximumAge:5000});
 
+// ---------- Pestañas ----------
+window.tab = t => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + t));
+  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
+  try{ localStorage.setItem("tab", t); }catch(e){}
+  window.scrollTo(0, 0);
+  if (t === "ruta" && mapa) setTimeout(() => { mapa.invalidateSize(); rutaKey = ""; dibujarMapa(); }, 60);
+};
+let filtro = "pend";
+const abiertos = new Set();
+window.filtrar = f => { filtro = f; dibujarLista(); };
+window.abrir = id => { abiertos.has(id) ? abiertos.delete(id) : abiertos.add(id); dibujarLista(); };
+
 // ---------- Lista de vendedores ----------
 function dibujarLista(){
   vendedores.sort((a,b) => (a.retirado-b.retirado) || (a.orden-b.orden) || (a.dia||"").localeCompare(b.dia||""));
   let gran = 0, pend = 0;
-  const html = vendedores.map(v => {
-    const t = totalDe(v), id = esc(v.id); if (!v.retirado){ gran += t; pend++; }
+  vendedores.forEach(v => { if (!v.retirado){ gran += totalDe(v); pend++; } });
+  const q = ($("buscar").value||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+  const norm = t => String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const lista = vendedores.filter(v => (filtro==="todos" || (filtro==="ret") === !!v.retirado) &&
+    (!q || norm(`${v.nombre} ${v.apellido} ${v.direccion} ${v.localidad} ${v.telefono}`).includes(q)));
+  const html = lista.map(v => {
+    const t = totalDe(v), id = esc(v.id), ab = abiertos.has(String(v.id));
     const monedas = Object.entries(v.monedas||{}).filter(([,c])=>c>0).map(([k,c])=>`<span class="chip coin">${c} × ${esc(k)}</span>`).join("");
     const chips = [
       v.retirado ? `<span class="chip done">Retirado</span>` : "",
       esTmp(v.id) ? `<span class="chip up">Sin subir</span>` : "",
-      !v.coord && !esTmp(v.id) ? `<span class="chip warn">Sin ubicación en el mapa</span>` : ""
+      !v.coord && !esTmp(v.id) ? `<span class="chip warn">Sin ubicación</span>` : ""
     ].join("");
-    return `<div class="card vend ${v.retirado?"done":""}">
+    const tel = v.telefono
+      ? `<a class="btn ghost" href="tel:${esc(v.telefono)}" aria-label="Llamar">${ico("phone")}</a>
+         <a class="btn wsp" href="${wspLink(v.telefono, `Hola ${v.nombre}, te escribo por la compra de monedas.`)}" target="_blank" rel="noopener" aria-label="WhatsApp">${ico("wsp")}</a>`
+      : `<button class="btn ghost" disabled aria-label="Sin teléfono">${ico("phone")}</button><button class="btn ghost" disabled aria-label="Sin teléfono">${ico("wsp")}</button>`;
+    return `<div class="card vend ${v.retirado?"done":""} ${ab?"abierto":""}">
      <div class="vh">
       ${v.orden<999 && !v.retirado ? `<span class="num">${v.orden}</span>` : ""}
-      <div class="vname"><b>${esc(v.nombre)} ${esc(v.apellido)}</b>${chips ? `<div class="chips">${chips}</div>` : ""}</div>
+      <div class="vname"><b>${esc(v.nombre)} ${esc(v.apellido)}</b></div>
       <div class="vtot">${pesos(t)}</div>
      </div>
      <div class="meta">${ico("pin")}<span>${esc(v.direccion)}, ${esc(v.localidad)}</span></div>
-     ${v.telefono ? `<div class="meta">${ico("phone")}<span>${esc(v.telefono)}</span></div>` : ""}
-     <div class="chips" style="margin-top:10px">${monedas || `<span class="chip">Sin monedas cargadas</span>`}</div>
-     <div class="grid2 when">
-      <label class="field"><span>${ico("calendar")}Día de retiro</span><input type="date" class="${v.dia?"":"vacio"}" value="${esc(v.dia)}" onchange="cambiar('${id}','dia',this.value)"></label>
-      <label class="field"><span>${ico("clock")}Hora</span><input type="time" class="${v.hora?"":"vacio"}" value="${esc(v.hora ? String(v.hora).slice(0,5) : "")}" onchange="cambiar('${id}','hora',this.value)"></label>
+     <div class="meta">${ico("calendar")}<span>${v.dia||v.hora ? esc(cuando(v)) : "Sin día ni hora"}</span></div>
+     ${chips ? `<div class="chips">${chips}</div>` : ""}
+     <div class="qa">
+      ${tel}
+      <button class="btn ghost" onclick="ir('${id}')" aria-label="Google Maps">${ico("nav")}</button>
+      ${v.retirado ? `<button class="btn ghost txt" onclick="cambiar('${id}','retirado',false)">${ico("undo")}Pendiente</button>`
+                   : `<button class="btn txt" onclick="retirarYSeguir('${id}')">${ico("check")}Retirado</button>`}
+      <button class="btn ghost chev" onclick="abrir('${id}')" aria-label="Ver más">${ico("chev")}</button>
      </div>
-     <small style="display:block;margin-top:6px">${v.dia||v.hora ? esc(cuando(v)) : "Todavía no tiene día ni hora de retiro."}</small>
-     ${v.telefono && !v.retirado ? `<div class="grid2" style="margin-top:12px">
-      <a class="btn ghost sm" href="tel:${esc(v.telefono)}">${ico("phone")}Llamar</a>
-      <a class="btn wsp sm" href="${wspLink(v.telefono, `Hola ${v.nombre}, te escribo por la compra de monedas.`)}" target="_blank" rel="noopener">${ico("wsp")}WhatsApp</a>
-     </div>` : ""}
-     <div class="acts">
-      <button class="btn ghost sm" onclick="ir('${id}')">${ico("nav")}Maps</button>
-      ${v.retirado ? `<button class="btn ghost sm" onclick="cambiar('${id}','retirado',false)">${ico("undo")}Pendiente</button>`
-                   : `<button class="btn sm" onclick="retirarYSeguir('${id}')">${ico("check")}Retirado</button>`}
-      <button class="btn danger sm icon" onclick="borrar('${id}')" aria-label="Borrar">${ico("trash")}</button>
+     <div class="more">
+      <div class="chips">${monedas || `<span class="chip">Sin monedas cargadas</span>`}</div>
+      ${v.telefono ? `<div class="meta">${ico("phone")}<span>${esc(v.telefono)}</span></div>` : ""}
+      <div class="grid2 when">
+       <label class="field"><span>${ico("calendar")}Día de retiro</span><input type="date" class="${v.dia?"":"vacio"}" value="${esc(v.dia)}" onchange="cambiar('${id}','dia',this.value)"></label>
+       <label class="field"><span>${ico("clock")}Hora</span><input type="time" class="${v.hora?"":"vacio"}" value="${esc(v.hora ? String(v.hora).slice(0,5) : "")}" onchange="cambiar('${id}','hora',this.value)"></label>
+      </div>
+      <div class="grid2" style="margin-top:10px">
+       ${!v.coord && !esTmp(v.id) ? `<button class="btn ghost sm" onclick="reubicar('${id}')">${ico("crosshair")}Ubicar</button>` : "<span></span>"}
+       <button class="btn danger sm" onclick="borrar('${id}')">${ico("trash")}Borrar</button>
+      </div>
      </div>
-     ${!v.coord && !esTmp(v.id) ? `<button class="btn ghost sm" style="margin-top:8px" onclick="reubicar('${id}')">${ico("crosshair")}Buscar de nuevo en el mapa</button>` : ""}
     </div>`;
   }).join("");
-  $("lista").innerHTML = html || `<div class="card vacia">Todavía no cargaste vendedores.</div>`;
+  const vacio = q ? "No encontré vendedores con esa búsqueda." : filtro==="ret" ? "No hay vendedores retirados." : filtro==="pend" && vendedores.length ? "No quedan vendedores por retirar." : "Todavía no cargaste vendedores.";
+  $("lista").innerHTML = html || `<div class="card vacia">${vacio}</div>`;
+  document.querySelectorAll("#seg button").forEach(x => x.classList.toggle("on", x.dataset.f === filtro));
+  $("btnLimpiar").style.display = filtro==="ret" && lista.length ? "flex" : "none";
   $("stPend").textContent = pend;
   $("stTotal").textContent = pesos(gran);
   $("stOrigen").textContent = nombreOrigen();
-  $("cuenta").textContent = vendedores.length ? `${pend} por retirar de ${vendedores.length}` : "";
+  $("badge").textContent = pend || "";
+  $("cuenta").textContent = vendedores.length ? `${pend} por retirar de ${vendedores.length} · Total ${pesos(gran)}` : "";
 }
 function render(){ dibujarLista(); dibujarProxima(); dibujarMapa(); pintarRed(); }
 
@@ -836,6 +921,7 @@ window.guardarConfig = async () => {
 };
 
 // ---------- Arranque ----------
+{ let t = "ruta"; try{ t = localStorage.getItem("tab") || "ruta"; }catch(e){} tab(["ruta","cargar","lista"].includes(t) ? t : "ruta"); }
 aplicarLogo();
 render();
 if (sb) sb.channel("vendedores-cambios").on("postgres_changes", {event:"*", schema:"public", table:"vendedores"}, () => { if (!cola.length && !sincronizando) traer(); }).subscribe();
