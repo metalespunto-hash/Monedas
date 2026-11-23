@@ -17,7 +17,7 @@ Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. En el ce
 - Ruta: vecino más cercano desde el punto de salida (`armarRuta`).
 - Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet.
 - Precios de las monedas: constante `PRECIOS` en `index.html`. Localidades: `LOCALIDADES`.
-- Editar vendedor: `editar(id)` carga los datos en la pestaña Cargar (`editId`); si cambia la dirección se vuelve a ubicar en el mapa.
+- Editar vendedor: botón "Editar" (lápiz) en cada tarjeta y en la próxima parada, o tocando el nombre. `editar(id)` carga los datos en la pestaña Cargar (`editId`); si cambia la dirección se vuelve a ubicar en el mapa.
 - WhatsApp: un mensaje predeterminado en `cfg.mensaje` (original en `MENSAJE`, acepta {nombre} {total} {direccion} {cuando}). Al tocar WhatsApp, `#wspDlg` deja mandar ese o escribir otro.
 
 ## Al hacer cambios
