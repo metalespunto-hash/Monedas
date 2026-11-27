@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-e";
+var VERSION="2026-11-27-f";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -800,7 +800,7 @@ window.guardar = () => {
   if (editId){
     const v = porId(editId);
     if (!v){ limpiarForm(); return toast("Ese vendedor ya no existe", "err"); }
-    const mudo = v.direccion !== base.direccion || v.localidad !== base.localidad;
+    const mudo = v.direccion !== base.direccion || v.localidad !== base.localidad || !v.coord;   // sin ubicación: se vuelve a buscar
     const datos = mudo ? {...base, coord:null} : base;
     const ins = cola.find(o => o.t === "ins" && o.id === v.id);
     if (ins){ Object.assign(ins.datos, datos); Object.assign(v, datos); }   // todavía no se subió: se corrige lo que va a subir
