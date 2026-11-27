@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-f";
+var VERSION="2026-11-27-g";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -627,7 +627,7 @@ function patronCalle(t){
     .replace(/^(calle|av\.?|avda\.?|avenida|bv\.?|bvard\.?|bulevar|boulevard|pasaje|pje\.?|diagonal|diag\.?)\s+/, "")
     .replace(/[.*+?^${}()|[\]\\"]/g, "")
     .replace(/a/g,"[aá]").replace(/e/g,"[eé]").replace(/i/g,"[ií]").replace(/o/g,"[oó]").replace(/u/g,"[uúü]").replace(/n/g,"[nñ]")
-    .replace(/\s+/g, "\\s+");
+    .replace(/\s+/g, " ");          // espacio común: en Overpass una barra invertida (\s) rompe la consulta
 }
 async function centroDe(loc){
   const memo = LS.get("centros", {}); if (memo[loc]) return memo[loc];
@@ -646,17 +646,28 @@ function grupos(nodos){
   }
   return gs.map(g => ({lat: g.reduce((s, n) => s + n.lat, 0) / g.length, lon: g.reduce((s, n) => s + n.lon, 0) / g.length}));
 }
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+let errMapa = "";
 async function esquinaOverpass(a, b, centro, radio){
   const q = `[out:json][timeout:20];
 way(around:${radio},${centro.lat},${centro.lon})["highway"]["name"~"${patronCalle(a)}",i]->.a;
 way(around:${radio},${centro.lat},${centro.lon})["highway"]["name"~"${patronCalle(b)}",i]->.b;
 node(w.a)(w.b);
 out;`;
-  try{
-    const r = await fetch("https://overpass-api.de/api/interpreter", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:"data=" + encodeURIComponent(q)});
-    const j = await r.json();
-    return grupos((j.elements||[]).filter(e => e.type === "node").map(e => ({lat:e.lat, lon:e.lon})));
-  }catch(e){ return null; }
+  for (const url of OVERPASS){
+    try{
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 25000);
+      const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:"data=" + encodeURIComponent(q), signal:ctl.signal});
+      clearTimeout(t);
+      if (!r.ok) continue;                                   // ocupado o error: se prueba el otro servidor
+      const j = await r.json();
+      if (!Array.isArray(j.elements)) continue;
+      errMapa = "";
+      return grupos(j.elements.filter(e => e.type === "node").map(e => ({lat:e.lat, lon:e.lon})));
+    }catch(e){}
+  }
+  errMapa = " (el servicio de mapas no respondió: probá de nuevo en un rato)";
+  return null;
 }
 async function buscarEsquina(a, b, loc){
   const centro = await centroDe(loc||"Andino");
@@ -748,7 +759,7 @@ window.sincronizar = async (manual) => {
           const nuevo = r.data.id, v = porId(op.id);
           if (v){ v.id = nuevo; v.coord = datos.coord; }
           cola.forEach(o => { if (o.id===op.id) o.id = nuevo; if (o.ids) o.ids = o.ids.map(i => i===op.id ? nuevo : i); });
-          if (!datos.coord) toast(`No pude ubicar en el mapa la dirección de ${datos.nombre}. Podés poner calle y número, o la esquina: "27 de Febrero y Provincias Unidas".`, "err");
+          if (!datos.coord) toast(`No pude ubicar en el mapa la dirección de ${datos.nombre}${errMapa}. Podés poner calle y número, o la esquina: "27 de Febrero y Provincias Unidas".`, "err");
         }
       } else if (op.t==="upd"){
         if (!esTmp(op.id)) error = (await sb.from("vendedores").update(op.datos).eq("id", op.id)).error;
@@ -808,7 +819,7 @@ window.guardar = () => {
     limpiarForm(); hecho(); tab("lista");
     toast("Cambios guardados");
     if (mudo && !ins && navigator.onLine) geocodificar(base.direccion, base.localidad).then(c => {
-      if (c){ cambiarLocal(v.id, {coord:c}); hecho(); } else toast("No encontré la dirección nueva en el mapa. Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
+      if (c){ cambiarLocal(v.id, {coord:c}); hecho(); } else toast("No encontré la dirección nueva en el mapa" + errMapa + ". Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
     });
     return;
   }
@@ -885,7 +896,7 @@ window.reubicar = async id => {
   if (!navigator.onLine) return toast("Para buscar la dirección hace falta internet", "err");
   toast("Buscando la dirección...");
   const c = await geocodificar(v.direccion, v.localidad);
-  if (!c) return toast("No encontré esa dirección. Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
+  if (!c) return toast("No encontré esa dirección" + errMapa + ". Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
   cambiarLocal(v.id, {coord:c}); hecho(); toast("Ubicado en el mapa");
 };
 window.ir = id => {
