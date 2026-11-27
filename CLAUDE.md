@@ -14,7 +14,7 @@ Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. En el ce
 - Datos en Supabase, tabla `vendedores` (nombre, apellido, telefono, direccion, localidad, dia, hora, monedas{tipo:cantidad}, coord{lat,lon}, orden, retirado). Orden 999 = fuera de ruta.
 - Copia local en `localStorage` (`vendedores`) + cola de cambios (`cola`) que se sube con `sincronizar()` cuando hay internet. Los vendedores cargados sin internet usan id `tmp-...` hasta subirse.
 - Configuración en `localStorage` (`config`): origen (`dir` o `gps`), dirección/localidad de salida, coord, radio del modo automático, logo propio.
-- Ruta: vecino más cercano desde el punto de salida (`armarRuta`).
+- Ruta: vecino más cercano desde el punto de salida (`armarRuta`). Con salida GPS, `origen()` pide la ubicación del momento (`posActual(true)`), no la última guardada: el iPhone frena el GPS en segundo plano. `iniciarGPS()` lo reactiva al volver a la app.
 - Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet.
 - Precios de las monedas: constante `PRECIOS` en `index.html`. Localidades: `LOCALIDADES`.
 - Editar vendedor: botón "Editar" (lápiz) en cada tarjeta y en la próxima parada, o tocando el nombre. `editar(id)` carga los datos en la pestaña Cargar (`editId`); si cambia la dirección se vuelve a ubicar en el mapa.

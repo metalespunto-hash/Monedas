@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-23-i";
+var VERSION="2026-11-27-a";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -442,6 +442,7 @@ let cfg = Object.assign({origen:"dir", dir:"Urquiza 354", loc:"Andino", coord:nu
 if (!cfg.coord && cfg.dir==="Urquiza 354" && cfg.loc==="Andino") cfg.coord = LS.get("casa", null);
 function guardarLocal(){ LS.set("vendedores", vendedores); LS.set("cola", cola); }
 
+let miPosT = 0, gpsId = null;
 let mapa=null, capa=null, mYo=null, linea=null, miPos=null, rutaKey="", procesando=new Set(), sincronizando=false, cfgTemp=null;
 
 // ---------- Íconos ----------
@@ -586,16 +587,21 @@ async function geocodificar(dir, loc){
 }
 const metros = (a,b) => { const R=6371000, r=x=>x*Math.PI/180, dl=r(b.lat-a.lat), dn=r(b.lon-a.lon);
   const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
-const posActual = () => new Promise(res => {
+// Pide la ubicación al GPS. Con fresca=true no acepta una ubicación vieja guardada por el celular.
+const posActual = (fresca) => new Promise(res => {
   if (!navigator.geolocation) return res(null);
-  navigator.geolocation.getCurrentPosition(p => res({lat:p.coords.latitude, lon:p.coords.longitude}), () => res(null),
-    {enableHighAccuracy:true, timeout:12000, maximumAge:30000});
+  navigator.geolocation.getCurrentPosition(p => res({lat:p.coords.latitude, lon:p.coords.longitude, prec:p.coords.accuracy}), () => res(null),
+    {enableHighAccuracy:true, timeout: fresca ? 15000 : 12000, maximumAge: fresca ? 0 : 30000});
 });
 async function origen(){
   if (cfg.origen==="gps"){
-    const p = miPos || await posActual();
-    if (p) return p;
-    toast("Sin GPS: uso la dirección de salida guardada");
+    // Siempre se pide la ubicación de este momento: la última que avisó el GPS puede ser de antes
+    // (el iPhone deja de mandarla cuando la app queda en segundo plano).
+    estado("Buscando tu ubicación actual...");
+    let p = await posActual(true);
+    if (!p && miPos && Date.now() - miPosT < 60000) p = miPos;   // si falla, solo sirve una de hace menos de 1 minuto
+    if (p){ miPos = {lat:p.lat, lon:p.lon}; miPosT = Date.now(); return p; }
+    toast("No pude leer tu ubicación actual: uso la dirección de salida guardada", "err");
   }
   if (cfg.coord) return cfg.coord;
   const c = await geocodificar(cfg.dir, cfg.loc);
@@ -869,11 +875,19 @@ window.cambiarModo = () => {
 };
 try{ $("modoAuto").checked = localStorage.getItem("modoAuto")==="1"; }catch(e){}
 cambiarModo();
-if (navigator.geolocation) navigator.geolocation.watchPosition(pos => {
-  miPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
-  const p = proxima(); dibujarProxima(); dibujarMapa();
-  if (p && $("modoAuto").checked && metros(miPos,p.coord) <= (cfg.radio||50)) retirarYSeguir(p.id);
-}, () => { $("modoEstado").textContent += " (Sin GPS: revisá el permiso de ubicación)"; }, {enableHighAccuracy:true, maximumAge:5000});
+function iniciarGPS(){
+  if (!navigator.geolocation) return;
+  if (gpsId !== null) navigator.geolocation.clearWatch(gpsId);
+  gpsId = navigator.geolocation.watchPosition(pos => {
+    miPos = {lat:pos.coords.latitude, lon:pos.coords.longitude}; miPosT = Date.now();
+    const p = proxima(); dibujarProxima(); dibujarMapa();
+    if (p && $("modoAuto").checked && metros(miPos,p.coord) <= (cfg.radio||50)) retirarYSeguir(p.id);
+  }, () => { if (!/Sin GPS/.test($("modoEstado").textContent)) $("modoEstado").textContent += " (Sin GPS: revisá el permiso de ubicación)"; }, {enableHighAccuracy:true, maximumAge:5000});
+}
+iniciarGPS();
+// Al volver a la app (desde WhatsApp, Maps o con la pantalla bloqueada) el iPhone puede haber frenado el GPS: se reactiva.
+document.addEventListener("visibilitychange", () => { if (!document.hidden) iniciarGPS(); });
+window.addEventListener("pageshow", () => iniciarGPS());
 
 // ---------- Pestañas ----------
 window.tab = t => {
@@ -981,7 +995,7 @@ $("cfgDir").addEventListener("input", () => { cfgTemp.coord = null; pintarUbicCf
 $("cfgLoc").addEventListener("change", () => { if ($("cfgDir").value !== GPS_FIJO){ cfgTemp.coord = null; pintarUbicCfg(); } });
 window.fijarAca = async () => {
   toast("Buscando tu ubicación...");
-  const p = await posActual();
+  const p = await posActual(true);
   if (!p) return toast("No pude leer el GPS. Revisá el permiso de ubicación.", "err");
   cfgTemp.coord = p; $("cfgDir").value = GPS_FIJO;
   document.querySelector('input[name=origen][value=dir]').checked = true;
