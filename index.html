@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-b";
+var VERSION="2026-11-27-c";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -837,9 +837,15 @@ async function dibujarMapa(){
     capa = L.layerGroup().addTo(mapa);
   }
   capa.clearLayers();
-  if (cfg.coord) L.marker([cfg.coord.lat,cfg.coord.lon], {icon:marca("home", ico("home"), 28), zIndexOffset:-100}).bindPopup("Salida").addTo(capa);
+  // La casita de salida solo cuando se sale de una dirección fija (con GPS, la salida es el punto azul)
+  const salida = cfg.origen === "dir" && cfg.coord ? cfg.coord : null;
+  if (salida) L.marker([salida.lat,salida.lon], {icon:marca("home", ico("home"), 28), zIndexOffset:-100}).bindPopup("Salida").addTo(capa);
   const ruta = vendedores.filter(v => !v.retirado && v.coord && v.orden<999).sort((a,b)=>a.orden-b.orden);
   const p = ruta[0];
+  // Línea punteada que une las paradas en orden, para ver el recorrido completo
+  const inicio = salida || miPos;
+  const orden = (inicio ? [[inicio.lat, inicio.lon]] : []).concat(ruta.map(v => [v.coord.lat, v.coord.lon]));
+  if (orden.length > 1) L.polyline(orden, {color:"#0f766e", weight:2.5, opacity:.6, dashArray:"6 8"}).addTo(capa);
   ruta.forEach(v => L.marker([v.coord.lat,v.coord.lon], {icon: v===p ? marca("next", v.orden, 34) : marca("", v.orden, 28), zIndexOffset: v===p ? 1000 : 0})
     .bindPopup(`<b>${esc(v.nombre)} ${esc(v.apellido)}</b><br>${esc(v.direccion)}<br>${pesos(totalDe(v))}`).addTo(capa));
   if (miPos){
@@ -848,9 +854,12 @@ async function dibujarMapa(){
     else mYo.setLatLng(ll);
   }
   if (!p){ if (linea){ mapa.removeLayer(linea); linea=null; } rutaKey=""; return; }
-  const key = p.id + (miPos ? "gps" : "");
+  const key = ruta.map(v => v.id).join(",") + (miPos ? "gps" : "");
   if (rutaKey===key) return;
   rutaKey = key;
+  // Encuadre: toda la ruta (paradas, salida y tu ubicación), sin acercar de más
+  const encuadre = orden.concat(miPos ? [[miPos.lat, miPos.lon]] : []);
+  if (encuadre.length > 1) mapa.fitBounds(encuadre, {padding:[28,28], maxZoom:15}); else mapa.setView(encuadre[0], 15);
   if (linea){ mapa.removeLayer(linea); linea=null; }
   if (miPos){
     let pts = [[miPos.lat,miPos.lon],[p.coord.lat,p.coord.lon]];
@@ -860,10 +869,6 @@ async function dibujarMapa(){
     }catch(e){}
     if (linea) mapa.removeLayer(linea);
     linea = L.polyline(pts, {color:"#0f766e", weight:5, opacity:.85}).addTo(mapa);
-    mapa.fitBounds(linea.getBounds(), {padding:[24,24]});
-  } else {
-    const pts = ruta.map(v => [v.coord.lat, v.coord.lon]); if (cfg.coord) pts.push([cfg.coord.lat, cfg.coord.lon]);
-    if (pts.length > 1) mapa.fitBounds(pts, {padding:[24,24]}); else mapa.setView(pts[0], 15);
   }
 }
 
@@ -1060,6 +1065,7 @@ window.guardarConfig = async () => {
   }
   cfg = cfgTemp; LS.set("config", cfg);
   aplicarLogo(); cambiarModo(); rutaKey = ""; render();
+  estado(`Salida: ${nombreOrigen()}. Tocá "Armar ruta por cercanía" para ordenar desde ahí.`);
   $("cfg").close();
   if (aviso) toast(aviso, "err"); else toast("Configuración guardada");
 };
