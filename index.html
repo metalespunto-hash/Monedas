@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-d";
+var VERSION="2026-11-27-f";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -589,7 +589,7 @@ async function buscarDir(dir, loc){
 const SEP_ESQUINA = /\s+(?:y|e|esq\.?|esquina|&)\s+|\s*\/\s*/i;
 async function lineasDeCalle(calle, loc){
   try{
-    const j = await (await fetch(`${NOMINATIM}&limit=20&polygon_geojson=1&q=${consulta(calle, loc)}`)).json();
+    const j = await (await fetch(`${NOMINATIM}&limit=40&dedupe=0&polygon_geojson=1&q=${consulta(calle, loc)}`)).json();
     const lineas = [];
     for (const x of j){
       const g = x.geojson; if (!g || (x.class && x.class !== "highway")) continue;   // solo calles
@@ -620,15 +620,76 @@ function cruceDeCalles(LA, LB){
   }
   return dmin <= 60 ? ll(cerca) : null;   // casi se tocan (menos de 60 m): sirve igual
 }
+// --- Esquina con Overpass (OpenStreetMap): busca el punto exacto donde se tocan las dos calles ---
+const sinAcentos = t => String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function patronCalle(t){
+  return sinAcentos(t).trim()
+    .replace(/^(calle|av\.?|avda\.?|avenida|bv\.?|bvard\.?|bulevar|boulevard|pasaje|pje\.?|diagonal|diag\.?)\s+/, "")
+    .replace(/[.*+?^${}()|[\]\\"]/g, "")
+    .replace(/a/g,"[aá]").replace(/e/g,"[eé]").replace(/i/g,"[ií]").replace(/o/g,"[oó]").replace(/u/g,"[uúü]").replace(/n/g,"[nñ]")
+    .replace(/\s+/g, "\\s+");
+}
+async function centroDe(loc){
+  const memo = LS.get("centros", {}); if (memo[loc]) return memo[loc];
+  try{
+    const j = await (await fetch(`${NOMINATIM}&limit=1&q=${encodeURIComponent(`${loc}, Santa Fe, Argentina`)}`)).json();
+    if (!j[0]) return null;
+    memo[loc] = {lat:+j[0].lat, lon:+j[0].lon}; LS.set("centros", memo); return memo[loc];
+  }catch(e){ return null; }
+}
+// Agrupa los puntos de cruce: dos avenidas con doble mano se tocan en varios puntos muy cerca.
+function grupos(nodos){
+  const gs = [];
+  for (const n of nodos){
+    const g = gs.find(g => metros(g[0], n) < 250);
+    g ? g.push(n) : gs.push([n]);
+  }
+  return gs.map(g => ({lat: g.reduce((s, n) => s + n.lat, 0) / g.length, lon: g.reduce((s, n) => s + n.lon, 0) / g.length}));
+}
+async function esquinaOverpass(a, b, centro, radio){
+  const q = `[out:json][timeout:20];
+way(around:${radio},${centro.lat},${centro.lon})["highway"]["name"~"${patronCalle(a)}",i]->.a;
+way(around:${radio},${centro.lat},${centro.lon})["highway"]["name"~"${patronCalle(b)}",i]->.b;
+node(w.a)(w.b);
+out;`;
+  try{
+    const r = await fetch("https://overpass-api.de/api/interpreter", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:"data=" + encodeURIComponent(q)});
+    const j = await r.json();
+    return grupos((j.elements||[]).filter(e => e.type === "node").map(e => ({lat:e.lat, lon:e.lon})));
+  }catch(e){ return null; }
+}
 async function buscarEsquina(a, b, loc){
+  const centro = await centroDe(loc||"Andino");
+  if (centro){
+    const g = await esquinaOverpass(a, b, centro, 12000);
+    if (g && g.length) return g.sort((x, y) => metros(centro, x) - metros(centro, y))[0];   // la más cercana al centro del pueblo
+    // No está en esa localidad: se busca en toda la zona, pero solo si la esquina es una sola (no hay dudas)
+    const zona = await esquinaOverpass(a, b, {lat:-32.85, lon:-60.75}, 45000);
+    if (zona && zona.length === 1) return zona[0];
+  }
+  // Respaldo: dibujo de cada calle según el buscador de direcciones
   const LA = await lineasDeCalle(a, loc); if (!LA.length) return null;
-  await espera(1100);                                                // el buscador pide 1 consulta por segundo
+  await espera(1100);
   const LB = await lineasDeCalle(b, loc); if (!LB.length) return null;
   return cruceDeCalles(LA, LB);
 }
+// "27 de Febrero y Provincias Unidas en Rosario" -> dirección sin la localidad + "Rosario"
+function separarLocalidad(txt){
+  const t = String(txt||"").trim();
+  for (const l of LOCALIDADES){
+    const re = new RegExp(`(?:\\s+en|\\s*,)\\s+${patronCalle(l)}\\s*$`, "i");
+    if (re.test(sinAcentos(t)) || re.test(t)){
+      const m = t.match(new RegExp(`(?:\\s+en|\\s*,)\\s+\\S[\\s\\S]*$`, "i"));
+      const resto = t.slice(0, t.length - (m ? m[0].length : 0)).trim();
+      if (resto) return {dir: resto, loc: l};
+    }
+  }
+  return {dir: t, loc: null};
+}
 async function geocodificar(dir, loc){
   if (!navigator.onLine) return null;
-  const txt = String(dir||"").trim();
+  const sep = separarLocalidad(dir);
+  const txt = sep.dir; loc = sep.loc || loc;
   const partes = txt.split(SEP_ESQUINA).map(x => x.trim()).filter(Boolean);
   if (partes.length !== 2) return buscarDir(txt, loc);
   // Con número al final ("Gelly y Obes 1234") primero se prueba como dirección; si no, primero como esquina.
@@ -729,15 +790,17 @@ function pintarRed(){
 
 // ---------- Guardar, ruta, borrar ----------
 window.guardar = () => {
-  const nombre=$("nombre").value.trim(), direccion=$("direccion").value.trim();
+  const nombre=$("nombre").value.trim(); let direccion=$("direccion").value.trim();
   if (!nombre || !direccion) return toast("Falta nombre o dirección", "err");
   const monedas={}; document.querySelectorAll("[data-m]").forEach(i => monedas[i.dataset.m]=+i.value||0);
+  const sepLoc = separarLocalidad(direccion);
+  if (sepLoc.loc){ direccion = sepLoc.dir; $("localidad").value = sepLoc.loc; }
   const base = { nombre, apellido:$("apellido").value.trim(), telefono:$("telefono").value.trim(), direccion, localidad:$("localidad").value,
     dia:$("dia").value, hora:$("hora").value, monedas };
   if (editId){
     const v = porId(editId);
     if (!v){ limpiarForm(); return toast("Ese vendedor ya no existe", "err"); }
-    const mudo = v.direccion !== base.direccion || v.localidad !== base.localidad;
+    const mudo = v.direccion !== base.direccion || v.localidad !== base.localidad || !v.coord;   // sin ubicación: se vuelve a buscar
     const datos = mudo ? {...base, coord:null} : base;
     const ins = cola.find(o => o.t === "ins" && o.id === v.id);
     if (ins){ Object.assign(ins.datos, datos); Object.assign(v, datos); }   // todavía no se subió: se corrige lo que va a subir
@@ -1101,6 +1164,8 @@ window.guardarConfig = async () => {
   cfgTemp.origen = document.querySelector('input[name=origen]:checked')?.value || "dir";
   cfgTemp.dir = $("cfgDir").value.trim() || "Urquiza 354";
   cfgTemp.loc = $("cfgLoc").value;
+  const sepCfg = separarLocalidad(cfgTemp.dir);
+  if (sepCfg.loc){ cfgTemp.dir = sepCfg.dir; cfgTemp.loc = sepCfg.loc; }
   cfgTemp.radio = Math.min(500, Math.max(10, +$("cfgRadio").value || 50));
   cfgTemp.mensaje = $("cfgMsg").value.trim() || MENSAJE;
   let aviso = "";
