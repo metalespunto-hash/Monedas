@@ -268,7 +268,7 @@
   <label class="field"><span>Teléfono</span><input id="telefono" placeholder="3476 123456" type="tel" autocomplete="off"></label>
   <label class="field"><span>Localidad</span><select id="localidad"></select></label>
  </div>
- <label class="field" style="margin-top:10px"><span>Dirección</span><input id="direccion" placeholder="Calle y número" autocomplete="off"></label>
+ <label class="field" style="margin-top:10px"><span>Dirección</span><input id="direccion" placeholder="Calle y número, o esquina" autocomplete="off"></label>
 
  <div class="sub"><b>Monedas</b><button class="btn ghost sm voz" id="btnVoz" onclick="dictar()"><i data-i="mic"></i><span>Dictar</span></button></div>
  <small id="vozTexto"></small>
@@ -370,7 +370,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-c";
+var VERSION="2026-11-27-d";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -576,14 +576,64 @@ window.dictar = () => {
 };
 
 // ---------- Direcciones y distancias ----------
-async function geocodificar(dir, loc){
-  if (!navigator.onLine) return null;
+const NOMINATIM = "https://nominatim.openstreetmap.org/search?format=json&countrycodes=ar";
+const consulta = (txt, loc) => encodeURIComponent(`${txt}, ${loc||"Andino"}, Santa Fe, Argentina`);
+async function buscarDir(dir, loc){
   try{
-    const q = encodeURIComponent(`${dir}, ${loc||"Andino"}, Santa Fe, Argentina`);
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${q}`);
-    const j = await r.json();
+    const j = await (await fetch(`${NOMINATIM}&limit=1&q=${consulta(dir, loc)}`)).json();
     return j[0] ? {lat:+j[0].lat, lon:+j[0].lon} : null;
   }catch(e){ return null; }
+}
+// Esquinas: "27 de Febrero y Provincias Unidas", "Mitre esq. Sarmiento", "Córdoba / Paraguay".
+// El buscador no entiende esquinas, así que se trae el dibujo de cada calle y se calcula dónde se cruzan.
+const SEP_ESQUINA = /\s+(?:y|e|esq\.?|esquina|&)\s+|\s*\/\s*/i;
+async function lineasDeCalle(calle, loc){
+  try{
+    const j = await (await fetch(`${NOMINATIM}&limit=20&polygon_geojson=1&q=${consulta(calle, loc)}`)).json();
+    const lineas = [];
+    for (const x of j){
+      const g = x.geojson; if (!g || (x.class && x.class !== "highway")) continue;   // solo calles
+      if (g.type === "LineString") lineas.push(g.coordinates);
+      else if (g.type === "MultiLineString") lineas.push(...g.coordinates);
+    }
+    return lineas;                                                   // cada línea: puntos [lon, lat]
+  }catch(e){ return []; }
+}
+function cruceDeCalles(LA, LB){
+  const pts = LA.concat(LB).flat(); if (!pts.length) return null;
+  const lat0 = pts.reduce((s, p) => s + p[1], 0) / pts.length, kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110540;
+  const xy = p => [p[0] * kx, p[1] * ky], ll = q => ({lat: q[1] / ky, lon: q[0] / kx});
+  let cerca = null, dmin = Infinity;
+  for (const la of LA) for (let i = 1; i < la.length; i++){
+    const [ax, ay] = xy(la[i-1]), [bx, by] = xy(la[i]);
+    for (const lb of LB) for (let k = 1; k < lb.length; k++){
+      const [cx, cy] = xy(lb[k-1]), [dx, dy] = xy(lb[k]);
+      const den = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+      if (Math.abs(den) > 1e-9){
+        const t = ((cx-ax)*(dy-cy) - (cy-ay)*(dx-cx)) / den, u = ((cx-ax)*(by-ay) - (cy-ay)*(bx-ax)) / den;
+        if (t >= -0.02 && t <= 1.02 && u >= -0.02 && u <= 1.02) return ll([ax + t*(bx-ax), ay + t*(by-ay)]);   // se cruzan
+      }
+      for (const [px, py] of [[ax, ay], [bx, by]]) for (const [qx, qy] of [[cx, cy], [dx, dy]]){
+        const d = Math.hypot(px-qx, py-qy); if (d < dmin){ dmin = d; cerca = [(px+qx)/2, (py+qy)/2]; }
+      }
+    }
+  }
+  return dmin <= 60 ? ll(cerca) : null;   // casi se tocan (menos de 60 m): sirve igual
+}
+async function buscarEsquina(a, b, loc){
+  const LA = await lineasDeCalle(a, loc); if (!LA.length) return null;
+  await espera(1100);                                                // el buscador pide 1 consulta por segundo
+  const LB = await lineasDeCalle(b, loc); if (!LB.length) return null;
+  return cruceDeCalles(LA, LB);
+}
+async function geocodificar(dir, loc){
+  if (!navigator.onLine) return null;
+  const txt = String(dir||"").trim();
+  const partes = txt.split(SEP_ESQUINA).map(x => x.trim()).filter(Boolean);
+  if (partes.length !== 2) return buscarDir(txt, loc);
+  // Con número al final ("Gelly y Obes 1234") primero se prueba como dirección; si no, primero como esquina.
+  if (/\d+\s*$/.test(txt)) return (await buscarDir(txt, loc)) || (await espera(1100), await buscarEsquina(partes[0], partes[1], loc));
+  return (await buscarEsquina(partes[0], partes[1], loc)) || (await espera(1100), await buscarDir(txt, loc));
 }
 const metros = (a,b) => { const R=6371000, r=x=>x*Math.PI/180, dl=r(b.lat-a.lat), dn=r(b.lon-a.lon);
   const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
@@ -637,7 +687,7 @@ window.sincronizar = async (manual) => {
           const nuevo = r.data.id, v = porId(op.id);
           if (v){ v.id = nuevo; v.coord = datos.coord; }
           cola.forEach(o => { if (o.id===op.id) o.id = nuevo; if (o.ids) o.ids = o.ids.map(i => i===op.id ? nuevo : i); });
-          if (!datos.coord) toast(`No pude ubicar en el mapa la dirección de ${datos.nombre}. Revisala.`, "err");
+          if (!datos.coord) toast(`No pude ubicar en el mapa la dirección de ${datos.nombre}. Podés poner calle y número, o la esquina: "27 de Febrero y Provincias Unidas".`, "err");
         }
       } else if (op.t==="upd"){
         if (!esTmp(op.id)) error = (await sb.from("vendedores").update(op.datos).eq("id", op.id)).error;
@@ -695,7 +745,7 @@ window.guardar = () => {
     limpiarForm(); hecho(); tab("lista");
     toast("Cambios guardados");
     if (mudo && !ins && navigator.onLine) geocodificar(base.direccion, base.localidad).then(c => {
-      if (c){ cambiarLocal(v.id, {coord:c}); hecho(); } else toast("No encontré la dirección nueva en el mapa. Revisala.", "err");
+      if (c){ cambiarLocal(v.id, {coord:c}); hecho(); } else toast("No encontré la dirección nueva en el mapa. Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
     });
     return;
   }
@@ -772,7 +822,7 @@ window.reubicar = async id => {
   if (!navigator.onLine) return toast("Para buscar la dirección hace falta internet", "err");
   toast("Buscando la dirección...");
   const c = await geocodificar(v.direccion, v.localidad);
-  if (!c) return toast("No encontré esa dirección. Revisá que esté bien escrita.", "err");
+  if (!c) return toast("No encontré esa dirección. Podés poner calle y número, o la esquina: \"27 de Febrero y Provincias Unidas\".", "err");
   cambiarLocal(v.id, {coord:c}); hecho(); toast("Ubicado en el mapa");
 };
 window.ir = id => {

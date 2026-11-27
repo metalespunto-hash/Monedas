@@ -15,7 +15,7 @@ Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. En el ce
 - Copia local en `localStorage` (`vendedores`) + cola de cambios (`cola`) que se sube con `sincronizar()` cuando hay internet. Los vendedores cargados sin internet usan id `tmp-...` hasta subirse.
 - Configuración en `localStorage` (`config`): origen (`dir` o `gps`), dirección/localidad de salida, coord, radio del modo automático, logo propio.
 - Ruta: vecino más cercano desde el punto de salida (`armarRuta`). Con salida GPS, `origen()` pide la ubicación del momento (`posActual(true)`), no la última guardada: el iPhone frena el GPS en segundo plano. `iniciarGPS()` lo reactiva al volver a la app.
-- Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet.
+- Direcciones con Nominatim (OpenStreetMap), recorrido en el mapa con OSRM, mapa con Leaflet. Esquinas ("A y B", "A esquina B", "A / B"): `geocodificar()` trae el dibujo de cada calle (`polygon_geojson`) y calcula el cruce (`cruceDeCalles`).
 - Precios de las monedas: constante `PRECIOS` en `index.html`. Localidades: `LOCALIDADES`.
 - Editar vendedor: botón "Editar" (lápiz) en cada tarjeta y en la próxima parada, o tocando el nombre. `editar(id)` carga los datos en la pestaña Cargar (`editId`); si cambia la dirección se vuelve a ubicar en el mapa.
 - WhatsApp: un mensaje predeterminado en `cfg.mensaje` (original en `MENSAJE`, acepta {nombre} {total} {direccion} {cuando}). Al tocar WhatsApp, `#wspDlg` deja mandar ese o escribir otro.
