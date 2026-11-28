@@ -52,6 +52,7 @@
  main{flex:1;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:14px max(14px, calc((100% - 760px) / 2)) 24px}
  .tab{display:none}.tab.on{display:block}
+ body.teclado nav.tabs{display:none}   /* con el teclado abierto, más lugar para el formulario */
  nav.tabs{position:relative;flex:none;z-index:1100;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,23,42,.08)}
  nav.tabs button{font:inherit;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:12px;font-weight:650;position:relative;cursor:pointer;border-radius:12px}
@@ -370,7 +371,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-27-g";
+var VERSION="2026-11-28-a";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -1195,6 +1196,25 @@ window.guardarConfig = async () => {
   $("cfg").close();
   if (aviso) toast(aviso, "err"); else toast("Configuración guardada");
 };
+
+// ---------- Teclado del iPhone ----------
+// El teclado (y su barrita con el tilde) tapa la parte de abajo. La app se achica a la parte visible,
+// así el botón Guardar queda arriba del teclado y el encabezado no se corre.
+if (window.visualViewport){
+  const vv = window.visualViewport, b = document.body;
+  const ajustar = () => {
+    const abierto = window.innerHeight - vv.height > 120;
+    b.classList.toggle("teclado", abierto);
+    if (abierto){ b.style.top = vv.offsetTop + "px"; b.style.bottom = "auto"; b.style.height = vv.height + "px"; }
+    else { b.style.top = ""; b.style.bottom = ""; b.style.height = ""; }
+  };
+  vv.addEventListener("resize", ajustar); vv.addEventListener("scroll", ajustar); ajustar();
+  // El campo que estás escribiendo queda a la vista
+  document.addEventListener("focusin", e => {
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.closest("dialog")) return;
+    setTimeout(() => e.target.scrollIntoView({block:"center", behavior:"smooth"}), 350);
+  });
+}
 
 // ---------- Arranque ----------
 { let t = "ruta"; try{ t = localStorage.getItem("tab") || "ruta"; }catch(e){} tab(["ruta","cargar","lista"].includes(t) ? t : "ruta"); }
