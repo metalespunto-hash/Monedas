@@ -53,6 +53,9 @@
   padding:14px max(14px, calc((100% - 760px) / 2)) 24px}
  .tab{display:none}.tab.on{display:block}
  body.teclado nav.tabs{display:none}   /* con el teclado abierto, más lugar para el formulario */
+ /* Con el teclado abierto, total y Guardar van arriba (debajo del encabezado): ningún teclado los tapa */
+ body.teclado .savebar{position:absolute;top:calc(var(--hdr, 64px) + 8px);bottom:auto;left:max(12px, env(safe-area-inset-left, 0px));right:max(12px, env(safe-area-inset-right, 0px));z-index:1200}
+ body.teclado #tab-cargar.on{padding-top:84px}
  nav.tabs{position:relative;flex:none;z-index:1100;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,23,42,.08)}
  nav.tabs button{font:inherit;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:12px;font-weight:650;position:relative;cursor:pointer;border-radius:12px}
@@ -352,6 +355,7 @@
    <p class="help">Podés cargar vendedores, armar la ruta y marcar retirados sin señal. Los cambios quedan guardados en el celular y se suben solos cuando vuelve internet. El mapa muestra las zonas que ya viste con internet.</p>
    <div class="ok-line" id="cfgCola"></div>
    <button class="btn ghost sm" style="margin-top:10px" onclick="sincronizar(true)"><i data-i="refresh"></i>Subir cambios ahora</button>
+   <p class="help" style="margin:14px 0 0">Versión de la app: <b id="verApp"></b></p>
   </section>
  </div>
  <div class="df"><button class="btn ghost" onclick="$('cfg').close()">Cancelar</button><button class="btn" id="btnCfg" onclick="guardarConfig()"><i data-i="check"></i>Guardar</button></div>
@@ -371,7 +375,7 @@
 
 <script>
 // ACTUALIZAR: botón y chequeo automático de versión nueva
-var VERSION="2026-11-28-a";
+var VERSION="2026-11-28-b";
 window.actualizar = function(){
   if (!navigator.onLine){ alert("Estás sin internet. La app sigue funcionando y se actualiza cuando vuelva la conexión."); return; }
   var ir = function(){ location.href = location.pathname + "?v=" + Date.now(); };
@@ -1203,12 +1207,17 @@ window.guardarConfig = async () => {
 if (window.visualViewport){
   const vv = window.visualViewport, b = document.body;
   const ajustar = () => {
-    const abierto = window.innerHeight - vv.height > 120;
+    const enCampo = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !/^(checkbox|radio|file|date|time)$/.test(document.activeElement.type) && !document.activeElement.closest("dialog");
+    const abierto = window.innerHeight - vv.height > 120 || enCampo;
     b.classList.toggle("teclado", abierto);
-    if (abierto){ b.style.top = vv.offsetTop + "px"; b.style.bottom = "auto"; b.style.height = vv.height + "px"; }
+    b.style.setProperty("--hdr", document.querySelector("header.top").offsetHeight + "px");
+    if (abierto && window.innerHeight - vv.height > 120){ b.style.top = vv.offsetTop + "px"; b.style.bottom = "auto"; b.style.height = vv.height + "px"; }
     else { b.style.top = ""; b.style.bottom = ""; b.style.height = ""; }
   };
-  vv.addEventListener("resize", ajustar); vv.addEventListener("scroll", ajustar); ajustar();
+  const verCampo = () => { const el = document.activeElement; if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !el.closest("dialog")) el.scrollIntoView({block:"center"}); };
+  vv.addEventListener("resize", () => { ajustar(); setTimeout(verCampo, 80); }); vv.addEventListener("scroll", ajustar); ajustar();
+  document.addEventListener("focusin", () => setTimeout(ajustar, 50));
+  document.addEventListener("focusout", () => setTimeout(ajustar, 120));
   // El campo que estás escribiendo queda a la vista
   document.addEventListener("focusin", e => {
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.closest("dialog")) return;
@@ -1217,6 +1226,7 @@ if (window.visualViewport){
 }
 
 // ---------- Arranque ----------
+$("verApp").textContent = VERSION;
 { let t = "ruta"; try{ t = localStorage.getItem("tab") || "ruta"; }catch(e){} tab(["ruta","cargar","lista"].includes(t) ? t : "ruta"); }
 aplicarLogo();
 render();

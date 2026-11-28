@@ -8,7 +8,7 @@ App web (una sola página) para cargar vendedores de monedas, armar la ruta de r
 - `manifest.webmanifest` + `icons/`: logo del acceso directo (`icons/icon.svg` es la fuente).
 
 ## Pantalla
-Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. Con el teclado abierto, `body` se achica a `visualViewport` (Guardar queda arriba del teclado) y se esconde la barra de pestañas (`body.teclado`). En el celular el mapa se mueve con dos dedos. Tres pestañas (`tab()`): **Ruta** (próxima parada, armar ruta, mapa), **Cargar** (formulario con total y Guardar fijos abajo) y **Vendedores** (buscador, filtro Pendientes/Retirados/Todos, tarjetas compactas que se abren con la flechita).
+Pantalla tipo app: encabezado y barra fijos, solo se desplaza `<main>`. Con el teclado abierto (o un campo con foco, por si el iPhone no avisa el tamaño) se activa `body.teclado`: total y Guardar pasan arriba, debajo del encabezado, se esconde la barra de pestañas y `body` se achica a `visualViewport`. La versión se ve en Configuración (`#verApp`). En el celular el mapa se mueve con dos dedos. Tres pestañas (`tab()`): **Ruta** (próxima parada, armar ruta, mapa), **Cargar** (formulario con total y Guardar fijos abajo) y **Vendedores** (buscador, filtro Pendientes/Retirados/Todos, tarjetas compactas que se abren con la flechita).
 
 ## Cómo funciona
 - Datos en Supabase, tabla `vendedores` (nombre, apellido, telefono, direccion, localidad, dia, hora, monedas{tipo:cantidad}, coord{lat,lon}, orden, retirado). Orden 999 = fuera de ruta.
